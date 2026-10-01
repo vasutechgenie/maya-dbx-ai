@@ -1,0 +1,52 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G4
+  name: governance
+  title: Governance and access
+  description: >
+    Least-privilege access and protected sensitive data, all declared in YAML. Roles map groups or service
+    principals to what they may read or execute. Every column G1 tagged sensitive is masked by exactly one
+    declared method: a tag-based (ABAC) policy or a per-column mask function. Row filters are applied where
+    declared. MAYA delivers the functions, policies, masks, filters, grants and an audit view through the project
+    bundle, never revokes grants it did not make, and proves each of them in Unity Catalog.
+spec:
+  prerequisites: [G1, G2]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: governance_plan.json, kind: artefact}
+    - {name: unity_catalog_access_controls, kind: workspace}
+  validation:
+    - {id: sensitive_data_protected, check: unprotected_columns, expect: "== 0", severity: mandatory, checklist: AE-3.4,
+       description: Every column tagged sensitive is masked by exactly one declared policy or column mask}
+    - {id: functions_as_declared, check: function_differences, expect: "== 0", severity: mandatory, checklist: AE-3.4,
+       description: Every mask and row filter function exists in Unity Catalog exactly as declared}
+    - {id: policies_as_declared, check: policy_differences, expect: "== 0", severity: mandatory, checklist: AE-3.4,
+       description: Every declared tag-based (ABAC) policy exists on its schema exactly as declared}
+    - {id: column_masks_as_declared, check: column_mask_differences, expect: "== 0", severity: mandatory, checklist: AE-3.4,
+       description: Every declared column mask is attached, and no removed one remains}
+    - {id: row_filters_as_declared, check: row_filter_differences, expect: "== 0", severity: mandatory, checklist: AE-3.4,
+       description: Every declared row filter is attached, and no removed one remains}
+    - {id: grants_as_declared, check: missing_grants, expect: "== 0", severity: mandatory, checklist: AE-8.2,
+       description: Every role holds exactly the privileges declared for it (groups and service principals only)}
+    - {id: catalog_access, check: catalog_access_gaps, expect: "== 0", severity: mandatory, checklist: AE-8.2,
+       description: Every role principal can use the catalogs it reads from}
+    - {id: unity_catalog_only, check: non_unity_catalog_objects, expect: "== 0", severity: mandatory, checklist: AE-8.1,
+       description: Every object of the data product is a Unity Catalog object}
+    - {id: audit_available, check: audit_gaps, expect: "== 0", severity: mandatory, checklist: AE-8.4,
+       description: The audit view exists and returns the access and change events of the product schemas}
+    - {id: consumer_exposure, check: consumer_exposure, expect: ">= 0", severity: advisory, checklist: AE-8.2,
+       description: Privileges that consumer principals hold on Bronze or Silver (left as is; informational)}
+    - {id: other_grants, check: undeclared_grants, expect: ">= 0", severity: advisory, checklist: AE-8.2,
+       description: Grants in the product schemas not declared here, individuals flagged (left as is; informational)}
+    - {id: writers_exempt, check: unexempt_writers, expect: ">= 0", severity: advisory, checklist: AE-3.4,
+       description: Identities that wrote tables from masked sources recently but are not exempt from the masks (they would copy masked values)}
+    - {id: jobs_run_as_service_principals, check: job_identity_findings, expect: ">= 0", severity: advisory, checklist: AE-8.3,
+       description: Jobs that run as a person or carry a personal token (advisory in dev; CI/CD sets service principals)}
+  certification:
+    approvers: [security]
+    valid_days: 90

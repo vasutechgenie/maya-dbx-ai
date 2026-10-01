@@ -1,0 +1,43 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G3
+  name: semantic_model
+  title: Semantic model
+  description: >
+    The business taxonomy domain > subdomain > page over the data product. The user declares the domains and
+    subdomains completely in YAML. Pages are declared fully, partly (a name, some assets) or left to MAYA ('auto'):
+    agents design the missing pages and place every Silver, Gold and metric-view asset on exactly one page. MAYA then
+    delivers, through the project bundle, governed domain / subdomain / page tags on every asset, the ontology
+    registry, the business glossary and an ontology_lookup() function, and proves each of them in Unity Catalog.
+spec:
+  prerequisites: [G1, G2]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: semantic_model.json, kind: artefact}
+    - {name: taxonomy.resolved.yaml, kind: artefact}
+    - {name: ontology_registry, kind: workspace}
+  validation:
+    - {id: taxonomy_registered, check: registry_differences, expect: "== 0", severity: mandatory, checklist: AE-7.1,
+       description: The ontology registry in Unity Catalog holds exactly the approved domains, subdomains and pages, each with a description and an owner}
+    - {id: governed_tags, check: governed_tag_differences, expect: "== 0", severity: mandatory, checklist: AE-7.2,
+       description: The domain, subdomain and page tags are governed tags whose allowed values are exactly the taxonomy}
+    - {id: every_asset_tagged, check: untagged_assets, expect: "== 0", severity: mandatory, checklist: AE-7.2,
+       description: Every Silver, Gold and metric-view asset carries its domain, subdomain and page tags}
+    - {id: one_page_per_asset, check: page_object_differences, expect: "== 0", severity: mandatory, checklist: AE-7.2,
+       description: The registry places every asset on exactly one page, as approved}
+    - {id: glossary_loaded, check: glossary_differences, expect: "== 0", severity: mandatory, checklist: AE-7.3,
+       description: The business glossary holds every term, each linked to the objects and fields that implement it}
+    - {id: lookup_works, check: lookup_failures, expect: "== 0", severity: mandatory, checklist: AE-7.4,
+       description: ontology_lookup() answers every glossary term and every page with the page and objects it lives on}
+    - {id: pages_populated, check: empty_pages, expect: ">= 0", severity: advisory, checklist: AE-7.1,
+       description: Pages declared without any asset (informational)}
+    - {id: confident_assignments, check: low_confidence_assignments, expect: ">= 0", severity: advisory, checklist: AE-7.2,
+       description: Asset placements made by an agent below the confidence threshold (informational)}
+  certification:
+    approvers: [business_owner]
+    valid_days: 90

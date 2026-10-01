@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": ["schema", "writers", "functions", "policies", "column_masks", "row_filters", "grants", "role_grants",
+               "removed", "coverage", "audit", "consumers"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[^.]+\\.[^.]+$"},
+    "writers": {"type": "array", "items": {"type": "string"}},
+    "functions": {"type": "array", "items": {"type": "object",
+                  "required": ["name", "full_name", "role", "params", "returns", "body", "comment", "exempt"],
+                  "properties": {"role": {"enum": ["mask", "row_filter"]}}}},
+    "policies": {"type": "array", "items": {"type": "object",
+                 "required": ["name", "schema", "function", "tag", "value", "except", "comment"]}},
+    "column_masks": {"type": "array", "items": {"type": "object", "required": ["table", "column", "function"]}},
+    "row_filters": {"type": "array", "items": {"type": "object", "required": ["table", "function", "columns"]}},
+    "grants": {"type": "array", "items": {"type": "object",
+               "required": ["principal", "privilege", "securable_type", "securable"],
+               "properties": {"privilege": {"enum": ["USE CATALOG", "USE SCHEMA", "SELECT", "EXECUTE"]},
+                              "securable_type": {"enum": ["CATALOG", "SCHEMA", "TABLE", "FUNCTION"]}}}},
+    "role_grants": {"type": "object"},
+    "removed": {"type": "object", "required": ["grants", "policies", "column_masks", "row_filters"]},
+    "coverage": {"type": "array", "items": {"type": "object", "required": ["table", "column", "value", "masked_by"]}},
+    "audit": {"type": "object", "required": ["view", "days", "full_name", "schemas"]},
+    "consumers": {"type": "array", "items": {"type": "string"}}
+  }
+}

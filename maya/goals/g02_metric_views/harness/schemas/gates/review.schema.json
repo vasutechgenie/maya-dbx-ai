@@ -1,0 +1,31 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["metric_view", "plan", "findings", "measures", "dimensions"],
+    "properties": {
+      "metric_view": {"type": "string", "pattern": "^[^.]+\\.[^.]+\\.[^.]+$"},
+      "owner": {"type": ["string", "null"]},
+      "plan": {"type": "array", "items": {"type": "string"}},
+      "summary": {"type": ["string", "null"]},
+      "findings": {
+        "type": "array",
+        "items": {
+          "type": "object", "required": ["target", "severity", "issue"],
+          "properties": {
+            "target": {"type": "string"},
+            "severity": {"type": "string", "enum": ["info", "warning"]},
+            "issue": {"type": "string"},
+            "suggestion": {"type": ["string", "null"]}
+          }
+        }
+      },
+      "measures": {
+        "type": "array", "minItems": 1,
+        "items": {"type": "object", "required": ["name", "expr", "reference"],
+                  "properties": {"reference": {"type": "object", "required": ["sql"]}}}
+      },
+      "dimensions": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+    }
+  }
+}

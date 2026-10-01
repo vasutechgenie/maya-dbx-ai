@@ -1,0 +1,23 @@
+nodes:
+  discover:   {type: code, run: intake.discover}
+  assess:     {type: code, run: intake.assess}
+  attest:
+    type: agent
+    agent: foundation_analyst
+    task: attest foundation readiness
+    input: intake.attestation_input
+    schema: harness/schemas/attestation.schema.json
+    output: attestation.json
+  validate:   {type: validator}
+  sign_off:
+    type: gate
+    approver: data_owner
+    items:
+      inventory.json:   {schema: harness/schemas/gates/inventory.schema.json, check: gate_checks.inventory}
+      assessment.json:  {schema: harness/schemas/gates/assessment.schema.json, check: gate_checks.assessment}
+      attestation.json: {schema: harness/schemas/gates/attestation.schema.json, check: gate_checks.attestation}
+  certify:    {type: certify}
+edges:
+  - discover -> assess -> attest -> validate
+  - validate -> sign_off when: mandatory_pass
+  - sign_off -> certify

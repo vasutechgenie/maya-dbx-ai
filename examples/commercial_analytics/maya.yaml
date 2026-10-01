@@ -1,0 +1,98 @@
+apiVersion: maya/v1
+kind: System
+metadata:
+  name: commercial-analytics
+  owner: data-products@example.com
+  description: Synthetic commercial data product used as the MAYA acceptance example.
+target:
+  profile: ${env:DATABRICKS_CONFIG_PROFILE}   # or standard Databricks auth env vars
+  warehouse_id: ${env:MAYA_WAREHOUSE_ID}
+  state_schema: solution_builder.maya_state_commercial_analytics   # this project's own state (goal runs, checks, approvals, certifications)
+  registry: solution_builder.maya_registry           # workspace-wide project list (portfolio dashboard), shared by all projects
+ai_gateway:
+  model: system.ai.claude-sonnet-4-6       # AI Gateway model service used by every agent unless a goal overrides it
+  harness: openai-agents                   # Omnigent harness; calls <workspace>/ai-gateway/openai/v1 (chat completions)
+# Only what is declared here is in scope; MAYA never scans other catalogs or schemas.
+# Per layer:
+#   catalog:  catalog of the layer's schemas (default: foundation.catalog)
+#   schema / schemas: one or more schemas; 'other_catalog.schema' picks a schema from another catalog
+#   tables:   all (every table and view in those schemas) | [names, 'schema.name', globs like 'dim_*']
+#   exclude:  names or globs to leave out (foundation.exclude applies to every layer)
+foundation:
+  catalog: solution_builder
+  layers:
+    bronze: {schemas: [maya_bronze], tables: all, metadata_scope: tables}
+    silver: {schemas: [maya_silver], tables: all, metadata_scope: full}
+    gold:   {schemas: [maya_gold],   tables: all, metadata_scope: full}
+  exclude: ["ingestion_log"]
+goals:
+  G0:
+    freshness_hours: {gold: 48}
+  G1:
+    allow_data: true                       # synthetic data: sample values may be shown to the model
+    context: context/business.yaml
+    declared_keys:
+      - {table: maya_silver.customer, primary_key: [customer_id]}
+    # The workspace's governed tag 'sensitivity' allows only these values (least to most restrictive)
+    sensitivity_classes: [public, internal, pii]
+    sensitivity_rules:
+      - {pattern: "(?i)(^|_)e_?mail(_|$)", class: pii}
+      - {pattern: "(?i)(^|_)(phone|mobile|fax)(_|$)", class: pii}
+      - {pattern: "(?i)(ssn|social_security|passport|national_id|tax_id)", class: pii}
+      - {pattern: "(?i)(^|_)(dob|birth_?date|date_of_birth)(_|$)", class: pii}
+      - {pattern: "(?i)(street|address_line|postcode|zip_?code)", class: pii}
+      - {pattern: "(?i)(password|secret|api_key|token)", class: pii}
+  G2:
+    schema: maya_metrics                   # metric views live in their own schema, never a foundation layer schema
+    definitions: kpis/metric_views.yaml    # the complete definition of every KPI, with reference SQL per measure
+  G3:
+    schema: maya_semantic                  # ontology registry, glossary and ontology_lookup()
+    taxonomy: semantic/taxonomy.yaml       # domains and subdomains in full; pages full, partial or 'auto'
+    # Governed tags need permission to create tag policies (account level); without it the tags are plain tags
+    # with the same controlled values. Set true where the deploying identity may create tag policies.
+    governed_tags: false
+  G4:
+    schema: maya_governance                # mask and row filter functions, audit view
+    # Identities that build the data product (the foundation job's run-as): exempt from every mask and row filter,
+    # so they never copy masked values downstream. In dev the jobs run as you; CI/CD lists its service principal.
+    writers: ["${env:MAYA_APPROVER}"]
+    catalog_access: existing               # the catalog's owner manages USE CATALOG (account users have it)
+    # Account-level groups or service principals only (workspace-local groups such as 'admins' are rejected).
+    roles:
+      consumers:
+        principals: ["${env:MAYA_CONSUMER_GROUP}"]
+        consumer: true                     # Gold, metric views and the semantic model only
+        read: [gold, metric_views, semantic]
+        execute: [semantic]
+      engineers:
+        principals: ["${env:MAYA_ENGINEER_GROUP}"]
+        read: [bronze, silver, gold, metric_views, semantic, governance]
+        execute: [semantic, governance]
+    mask_functions:
+      redact:     {kind: redact, unmasked_for: ["${env:MAYA_ENGINEER_GROUP}"]}
+      email_mask: {kind: email,  unmasked_for: ["${env:MAYA_ENGINEER_GROUP}"]}
+    masks:                                 # every column G1 tagged pii, masked by exactly one of these
+      - {abac: mask_pii, scopes: [bronze], match: {tag: sensitivity, value: pii}, function: redact}   # tag-based policy
+      - {column: maya_silver.customer.email, function: email_mask}                                     # per-column masks
+      - {column: maya_silver.customer.phone, function: redact}
+    row_filters:
+      - table: maya_gold.sales_daily
+        columns: [region_name]
+        by_group: {"${env:MAYA_CONSUMER_GROUP}": [North America West, North America East]}
+        unfiltered_for: ["${env:MAYA_ENGINEER_GROUP}"]
+certification:
+  # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
+  # of the approver below. manual: approvers decide with `maya review`.
+  approvals: auto
+  approvers:
+    data_owner: ${env:MAYA_APPROVER}
+    data_steward: ${env:MAYA_APPROVER}
+    kpi_owner: ${env:MAYA_APPROVER}
+    business_owner: ${env:MAYA_APPROVER}
+    security: ${env:MAYA_APPROVER}
+  # Goals already done outside MAYA: attest them here and the goals after them can run.
+  # self_certified:
+  #   G0: {by: data-platform@example.com, note: foundation attested by the platform team, valid_until: 2027-06-30}
+status:
+  formats: [html, json]
+  out_dir: reports/

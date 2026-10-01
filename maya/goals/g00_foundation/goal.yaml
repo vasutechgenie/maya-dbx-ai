@@ -1,0 +1,37 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G0
+  name: foundation
+  title: Foundation intake
+  description: >
+    Read-only intake of the existing Bronze/Silver/Gold foundation declared in maya.yaml: inventory every asset,
+    assess readability, emptiness and freshness, have an analyst agent attest to readiness and gaps, then certify.
+spec:
+  prerequisites: []
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 0}
+  drift: intake.drift
+  outputs:
+    - {name: asset_inventory, kind: state_table}
+    - {name: attestation.json, kind: artefact}
+  validation:
+    - {id: layers_populated, check: layers_populated, expect: "== 0", severity: mandatory, checklist: foundation.layers,
+       description: Every declared layer contains at least min_assets_per_layer assets}
+    - {id: assets_readable, check: assets_readable, expect: "== 0", severity: mandatory, checklist: foundation.access,
+       description: Every in-scope asset can be queried}
+    - {id: no_empty_tables, check: empty_assets, expect: "== 0", severity: mandatory, checklist: foundation.quality,
+       description: No in-scope table or view is empty}
+    - {id: layer_freshness, check: stale_layers, expect: "== 0", severity: mandatory, checklist: foundation.freshness,
+       description: Each layer with a freshness_hours limit was updated within it}
+    - {id: inventory_recorded, check: inventory_recorded, expect: "== 0", severity: mandatory, checklist: foundation.inventory,
+       description: The asset inventory state table matches what was discovered in this run}
+    - {id: attestation_complete, check: attestation_complete, expect: "== 0", severity: mandatory, checklist: foundation.attestation,
+       description: The analyst attested every layer and every gap is tied to a discovered asset}
+    - {id: undocumented_assets, check: undocumented_assets, expect: ">= 0", severity: advisory, checklist: foundation.metadata,
+       description: Assets without a description (input to G1, informational)}
+  certification:
+    approvers: [data_owner]
+    valid_days: 90

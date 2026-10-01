@@ -1,0 +1,222 @@
+# G2 input: the complete definition of every KPI metric view, written by the KPI owners.
+# MAYA creates each view exactly as defined here and certifies it only when every measure equals its reference SQL.
+#
+# Per metric view: name, comment, owner, source (foundation asset, Silver or Gold), optional filter and joins
+# (on: source.<col> = <join name>.<col>), dimensions and measures.
+# Per field: name, expr, display_name, comment, synonyms; measures also need a format and a reference:
+#   reference.sql  independent SQL (not the metric view, ideally not the same source) returning a column 'value'
+#   reference.by   dimension names the reference is grouped by; the SQL returns one column per name
+metric_views:
+  - name: sales_performance
+    comment: Net sales KPIs (revenue, orders, units, average order value) by day, region, product and category. Cancelled orders are excluded.
+    owner: sales-analytics@example.com
+    source: maya_gold.sales_daily
+    dimensions:
+      - {name: order_date, expr: order_date, display_name: Order date, comment: Calendar date the order was placed., synonyms: [date, day]}
+      - {name: order_month, expr: "DATE_TRUNC('MONTH', order_date)", display_name: Order month, comment: First day of the month the order was placed., synonyms: [month]}
+      - {name: region, expr: region_name, display_name: Region, comment: Sales region of the order., synonyms: [area, territory]}
+      - {name: product, expr: product_name, display_name: Product, comment: Product ordered., synonyms: [item, sku]}
+      - {name: category, expr: category, display_name: Product category, comment: Category of the product ordered., synonyms: [product line]}
+    measures:
+      - name: revenue
+        expr: SUM(revenue)
+        display_name: Revenue
+        comment: Net sales value (quantity x unit price) of non-cancelled orders, in USD.
+        synonyms: [sales, net sales, turnover]
+        format: {type: currency, currency_code: USD}
+        reference:
+          by: [region]
+          sql: |
+            SELECT r.region_name AS region, SUM(o.quantity * o.unit_price) AS value
+            FROM solution_builder.maya_silver.orders o
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            WHERE o.status <> 'cancelled'
+            GROUP BY r.region_name
+      - name: orders
+        expr: SUM(orders)
+        display_name: Orders
+        comment: Number of non-cancelled orders.
+        synonyms: [order count, number of orders]
+        format: {type: number}
+        reference:
+          by: [category]
+          sql: |
+            SELECT p.category, COUNT(*) AS value
+            FROM solution_builder.maya_silver.orders o
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            WHERE o.status <> 'cancelled'
+            GROUP BY p.category
+      - name: units
+        expr: SUM(units)
+        display_name: Units sold
+        comment: Quantity of product units on non-cancelled orders.
+        synonyms: [quantity, volume]
+        format: {type: number}
+        reference:
+          sql: |
+            SELECT SUM(o.quantity) AS value
+            FROM solution_builder.maya_silver.orders o
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            WHERE o.status <> 'cancelled'
+      - name: avg_order_value
+        expr: SUM(revenue) / SUM(orders)
+        display_name: Average order value
+        comment: Revenue divided by number of orders (non-cancelled), in USD.
+        synonyms: [AOV, average basket]
+        format: {type: currency, currency_code: USD}
+        reference:
+          sql: |
+            SELECT SUM(o.quantity * o.unit_price) / COUNT(*) AS value
+            FROM solution_builder.maya_silver.orders o
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            WHERE o.status <> 'cancelled'
+
+  - name: fulfilment
+    comment: Order fulfilment KPIs (units ordered, units shipped, fill rate) by ship date, region and product.
+    owner: supply-chain-analytics@example.com
+    source: maya_gold.shipment_fill_daily
+    dimensions:
+      - {name: ship_date, expr: ship_date, display_name: Ship date, comment: Calendar date the shipment left the warehouse., synonyms: [date, dispatch date]}
+      - {name: ship_month, expr: "DATE_TRUNC('MONTH', ship_date)", display_name: Ship month, comment: First day of the month the shipment left the warehouse., synonyms: [month]}
+      - {name: region, expr: region_name, display_name: Region, comment: Sales region of the shipped order., synonyms: [area, territory]}
+      - {name: product, expr: product_name, display_name: Product, comment: Product shipped., synonyms: [item, sku]}
+    measures:
+      - name: units_ordered
+        expr: SUM(units_ordered)
+        display_name: Units ordered
+        comment: Units requested on the orders covered by shipments.
+        synonyms: [ordered quantity, demand]
+        format: {type: number}
+        reference:
+          by: [region]
+          sql: |
+            SELECT r.region_name AS region, SUM(sh.units_ordered) AS value
+            FROM solution_builder.maya_silver.shipment sh
+            JOIN solution_builder.maya_silver.orders o ON sh.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            GROUP BY r.region_name
+      - name: units_shipped
+        expr: SUM(units_shipped)
+        display_name: Units shipped
+        comment: Units actually shipped to customers.
+        synonyms: [shipped quantity, deliveries]
+        format: {type: number}
+        reference:
+          sql: |
+            SELECT SUM(sh.units_shipped) AS value
+            FROM solution_builder.maya_silver.shipment sh
+            JOIN solution_builder.maya_silver.orders o ON sh.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+      - name: fill_rate
+        expr: SUM(units_shipped) / SUM(units_ordered)
+        display_name: Fill rate
+        comment: Share of ordered units that were shipped (units shipped / units ordered), a ratio of sums.
+        synonyms: [service level, fulfilment rate, unit fill rate]
+        format: {type: percentage}
+        reference:
+          by: [region]
+          sql: |
+            SELECT r.region_name AS region, SUM(sh.units_shipped) / SUM(sh.units_ordered) AS value
+            FROM solution_builder.maya_silver.shipment sh
+            JOIN solution_builder.maya_silver.orders o ON sh.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            GROUP BY r.region_name
+
+  - name: returns
+    comment: Product return KPIs (returns, units returned, returned value) by return date, region, product and reason.
+    owner: customer-service@example.com
+    source: maya_gold.returns_daily
+    dimensions:
+      - {name: return_date, expr: return_date, display_name: Return date, comment: Calendar date the return was received., synonyms: [date]}
+      - {name: return_month, expr: "DATE_TRUNC('MONTH', return_date)", display_name: Return month, comment: First day of the month the return was received., synonyms: [month]}
+      - {name: region, expr: region_name, display_name: Region, comment: Sales region of the original order., synonyms: [area, territory]}
+      - {name: product, expr: product_name, display_name: Product, comment: Product returned., synonyms: [item, sku]}
+      - {name: reason, expr: reason, display_name: Return reason, comment: Reason the customer gave for the return., synonyms: [cause, why returned]}
+    measures:
+      - name: returns
+        expr: SUM(returns)
+        display_name: Return count
+        comment: Number of return records received.
+        synonyms: [return count, number of returns]
+        format: {type: number}
+        reference:
+          by: [reason]
+          sql: |
+            SELECT rt.reason, COUNT(*) AS value
+            FROM solution_builder.maya_silver.returns rt
+            JOIN solution_builder.maya_silver.orders o ON rt.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            GROUP BY rt.reason
+      - name: units_returned
+        expr: SUM(units_returned)
+        display_name: Units returned
+        comment: Product units sent back by customers.
+        synonyms: [returned quantity]
+        format: {type: number}
+        reference:
+          sql: |
+            SELECT SUM(rt.units_returned) AS value
+            FROM solution_builder.maya_silver.returns rt
+            JOIN solution_builder.maya_silver.orders o ON rt.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+      - name: returned_value
+        expr: SUM(returned_value)
+        display_name: Returned value
+        comment: Value of returned units at the original unit price, in USD.
+        synonyms: [refund value, returns value]
+        format: {type: currency, currency_code: USD}
+        reference:
+          by: [region]
+          sql: |
+            SELECT r.region_name AS region, SUM(rt.units_returned * o.unit_price) AS value
+            FROM solution_builder.maya_silver.returns rt
+            JOIN solution_builder.maya_silver.orders o ON rt.order_id = o.order_id
+            JOIN solution_builder.maya_silver.product p ON o.product_id = p.product_id
+            JOIN solution_builder.maya_silver.region r ON o.region_code = r.region_code
+            GROUP BY r.region_name
+
+  - name: customer_orders
+    comment: Customer KPIs (active customers, revenue per segment) built on Silver orders joined to customers. Cancelled orders are excluded.
+    owner: sales-analytics@example.com
+    source: maya_silver.orders
+    filter: status <> 'cancelled'
+    joins:
+      - {name: customer, source: maya_silver.customer, "on": source.customer_id = customer.customer_id}
+    dimensions:
+      - {name: segment, expr: customer.segment, display_name: Customer segment, comment: Commercial segment of the customer., synonyms: [customer type, tier]}
+      - {name: order_month, expr: "DATE_TRUNC('MONTH', order_date)", display_name: Order month, comment: First day of the month the order was placed., synonyms: [month]}
+    measures:
+      - name: active_customers
+        expr: COUNT(DISTINCT customer_id)
+        display_name: Active customers
+        comment: Customers with at least one non-cancelled order.
+        synonyms: [buying customers, customer count]
+        format: {type: number}
+        reference:
+          by: [segment]
+          sql: |
+            SELECT segment, COUNT(*) AS value
+            FROM solution_builder.maya_gold.customer_360
+            WHERE lifetime_orders > 0
+            GROUP BY segment
+      - name: revenue
+        expr: SUM(quantity * unit_price)
+        display_name: Customer revenue
+        comment: Net sales value (quantity x unit price) of non-cancelled orders, in USD.
+        synonyms: [sales, spend]
+        format: {type: currency, currency_code: USD}
+        reference:
+          by: [segment]
+          sql: |
+            SELECT segment, SUM(lifetime_revenue) AS value
+            FROM solution_builder.maya_gold.customer_360
+            GROUP BY segment

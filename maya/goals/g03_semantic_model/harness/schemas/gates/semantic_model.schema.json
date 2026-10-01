@@ -1,0 +1,31 @@
+{
+  "type": "object",
+  "required": ["tag_keys", "declaration_hash", "domains", "subdomains", "pages", "assignments", "glossary"],
+  "properties": {
+    "tag_keys": {"type": "object", "required": ["domain", "subdomain", "page"],
+                 "properties": {"domain": {"type": "string"}, "subdomain": {"type": "string"}, "page": {"type": "string"}}},
+    "declaration_hash": {"type": "string"},
+    "domains": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "name", "description", "owner"]}},
+    "subdomains": {"type": "array", "minItems": 1,
+                   "items": {"type": "object", "required": ["id", "domain", "name", "description", "owner"]}},
+    "pages": {"type": "array", "minItems": 1,
+              "items": {"type": "object", "required": ["id", "domain", "subdomain", "name", "description", "owner", "source"],
+                        "properties": {"id": {"type": "string"}, "name": {"type": "string", "minLength": 1},
+                                       "description": {"type": ["string", "null"]},
+                                       "source": {"enum": ["user", "agent", "certified", "steward"]}}}},
+    "assignments": {"type": "array", "minItems": 1,
+                    "items": {"type": "object", "required": ["asset", "kind", "layer", "page", "domain", "subdomain", "source"],
+                              "properties": {"asset": {"type": "string", "pattern": "^[^.]+\\.[^.]+\\.[^.]+$"},
+                                             "page": {"type": "string"},
+                                             "source": {"enum": ["user", "agent", "certified", "steward"]},
+                                             "confidence": {"type": ["number", "null"], "minimum": 0, "maximum": 1}}}},
+    "glossary": {"type": "array",
+                 "items": {"type": "object", "required": ["term", "definition", "synonyms", "links", "source"],
+                           "properties": {"term": {"type": "string", "minLength": 1},
+                                          "definition": {"type": "string", "minLength": 1},
+                                          "synonyms": {"type": "array", "items": {"type": "string"}},
+                                          "page": {"type": ["string", "null"]},
+                                          "links": {"type": "array", "items": {"type": "object", "required": ["object", "field"]}},
+                                          "source": {"enum": ["user", "metric_view"]}}}}
+  }
+}

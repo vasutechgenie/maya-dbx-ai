@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["view", "summary", "findings"],
+  "properties": {
+    "view": {"type": "string", "description": "full_name of the metric view, exactly as given"},
+    "summary": {"type": "string", "maxLength": 600},
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["target", "severity", "issue"],
+        "properties": {
+          "target": {"type": "string", "description": "'view', 'measure:<name>', 'dimension:<name>' or 'reference:<measure>'"},
+          "severity": {"type": "string", "enum": ["info", "warning"]},
+          "issue": {"type": "string", "maxLength": 400},
+          "suggestion": {"type": "string", "maxLength": 400}
+        }
+      }
+    }
+  }
+}

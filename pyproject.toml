@@ -1,0 +1,22 @@
+[project]
+name = "maya-accelerator"
+version = "0.3.0"
+description = "MAYA Databricks AI Accelerator: a goal engine that makes a data foundation AI Enabled and AI Ready."
+license = "Apache-2.0"
+requires-python = ">=3.12"
+dependencies = [
+  "databricks-sdk>=0.60",
+  "pyyaml>=6",
+  "jsonschema>=4",
+  "omnigent[databricks]",
+]
+
+[project.scripts]
+maya = "maya.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["maya"]

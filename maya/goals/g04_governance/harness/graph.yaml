@@ -1,0 +1,18 @@
+nodes:
+  load:       {type: code, run: plan.load}
+  review:
+    type: gate
+    approver: security
+    items:
+      governance_plan.json: {schema: harness/schemas/gates/governance_plan.schema.json, check: gate_checks.plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> review -> apply -> validate
+  - validate -> mark when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - mark -> certify

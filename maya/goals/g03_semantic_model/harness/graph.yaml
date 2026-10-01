@@ -1,0 +1,43 @@
+nodes:
+  load:       {type: code, run: taxonomy.load}
+  plan:       {type: code, run: taxonomy.plan}
+  design:
+    type: agent
+    agent: page_designer
+    task: design the pages of one subdomain and place the assets that belong on them
+    for_each: plan.design
+    input: taxonomy.designer_input
+    schema: harness/schemas/design.schema.json
+    output: designs.json
+    concurrency: 4
+  resolve:    {type: code, run: taxonomy.resolve}
+  assign:
+    type: agent
+    agent: asset_assigner
+    task: place each asset of one batch on exactly one page
+    for_each: resolve.batches
+    input: taxonomy.assigner_input
+    schema: harness/schemas/assignment.schema.json
+    output: assignments.json
+    concurrency: 4
+  assemble:   {type: code, run: taxonomy.assemble}
+  review:
+    type: gate
+    approver: business_owner
+    items:
+      semantic_model.json:
+        schema: harness/schemas/gates/semantic_model.schema.json
+        check: gate_checks.model
+        editable: true
+        on_edit: gate_checks.accept_model_edit
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> plan -> design -> resolve -> assign -> assemble -> review -> apply -> validate
+  - validate -> mark when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - mark -> certify

@@ -1,0 +1,63 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)?$",
+               "description": "Where the metric views are created: 'schema' (foundation catalog) or 'catalog.schema'. Must not be a foundation layer schema."},
+    "definitions": {"type": "string", "description": "YAML file (relative to maya.yaml) with a top-level 'metric_views' list"},
+    "metric_views": {"type": "array", "items": {"$ref": "#/$defs/view"}, "description": "Inline definitions (instead of, or in addition to, 'definitions')"},
+    "tolerance": {"type": "number", "minimum": 0, "default": 0.000001,
+                  "description": "Allowed relative difference between a measure and its reference SQL"},
+    "allow_bronze_sources": {"type": "boolean", "default": false},
+    "certification_tag": {"type": "object", "default": {"key": "system.certification_status", "value": "certified"},
+                          "properties": {"key": {"type": "string"}, "value": {"type": "string"}}},
+    "tags": {"type": "object", "default": {}, "additionalProperties": {"type": "string"},
+             "description": "Tags set on every metric view"},
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental"},
+    "model": {"type": "string"}
+  },
+  "$defs": {
+    "field": {
+      "type": "object",
+      "required": ["name", "expr"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+        "expr": {"type": "string"},
+        "display_name": {"type": "string"},
+        "comment": {"type": "string"},
+        "synonyms": {"type": "array", "items": {"type": "string"}},
+        "format": {"type": "object"}
+      }
+    },
+    "measure": {
+      "allOf": [{"$ref": "#/$defs/field"}],
+      "required": ["name", "expr", "reference"],
+      "properties": {
+        "reference": {
+          "type": "object", "required": ["sql"], "additionalProperties": false,
+          "properties": {
+            "sql": {"type": "string", "description": "Independent SQL returning column 'value' (plus one column per 'by' dimension)"},
+            "by": {"type": "array", "items": {"type": "string"}, "description": "Dimension names the result is compared by"}
+          }
+        }
+      }
+    },
+    "view": {
+      "type": "object",
+      "required": ["name", "source", "dimensions", "measures"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+        "comment": {"type": "string"},
+        "owner": {"type": "string", "description": "KPI owner (recorded as the kpi_owner tag)"},
+        "source": {"type": "string", "description": "Foundation table or view: 'schema.table' or 'catalog.schema.table'"},
+        "filter": {"type": "string"},
+        "joins": {"type": "array", "items": {"type": "object", "required": ["name", "source", "on"],
+                  "properties": {"name": {"type": "string"}, "source": {"type": "string"}, "on": {"type": "string"}}}},
+        "dimensions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/field"}},
+        "measures": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/measure"}},
+        "tags": {"type": "object", "additionalProperties": {"type": "string"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "taxonomy"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)?$",
+               "description": "Where the ontology registry, glossary and ontology_lookup() live: 'schema' (foundation catalog) or 'catalog.schema'. Must not be a foundation layer schema."},
+    "taxonomy": {"type": "string", "description": "YAML file (relative to maya.yaml) with 'domains' (and optionally 'glossary'); see $defs/taxonomy"},
+    "layers": {"type": "array", "items": {"enum": ["bronze", "silver", "gold"]}, "default": ["silver", "gold"],
+               "description": "Foundation layers whose assets are placed on pages"},
+    "metric_view_schemas": {"type": "array", "items": {"type": "string"},
+                            "description": "Schemas whose metric views are placed on pages (default: the G2 schema)"},
+    "exclude": {"type": "array", "items": {"type": "string"}, "default": [],
+                "description": "Assets left off the semantic model: names, 'schema.name' or globs"},
+    "tag_keys": {"type": "object", "additionalProperties": false,
+                 "properties": {"domain": {"type": "string"}, "subdomain": {"type": "string"}, "page": {"type": "string"}},
+                 "description": "Tag keys (default: <project>_domain, <project>_subdomain, <project>_page). Governed tags are account-wide, so the defaults are per project."},
+    "governed_tags": {"type": "boolean", "default": true,
+                      "description": "Create the tag keys as governed tags whose allowed values are the taxonomy ids"},
+    "glossary_from_metric_views": {"type": "boolean", "default": true,
+                                   "description": "Every metric-view measure becomes a glossary term (its display name, description and synonyms)"},
+    "min_confidence": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.6,
+                       "description": "Agent placements below this confidence are reported for review"},
+    "assign_batch": {"type": "integer", "minimum": 1, "default": 8, "description": "Assets per assigner agent call"},
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental",
+             "description": "incremental keeps certified agent-built pages and placements; full designs them again"},
+    "model": {"type": "string"}
+  },
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,62}$", "description": "Controlled tag value: lower case, digits, underscores"},
+    "taxonomy": {
+      "type": "object", "additionalProperties": false, "required": ["domains"],
+      "properties": {
+        "domains": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/domain"}},
+        "glossary": {"type": "array", "items": {"$ref": "#/$defs/term"}}
+      }
+    },
+    "domain": {
+      "type": "object", "additionalProperties": false, "required": ["id", "name", "description", "owner", "subdomains"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 20},
+        "owner": {"type": "string", "minLength": 1},
+        "subdomains": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/subdomain"}}
+      }
+    },
+    "subdomain": {
+      "type": "object", "additionalProperties": false, "required": ["id", "name", "description"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "name": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 20},
+        "owner": {"type": "string", "description": "Default: the domain owner"},
+        "pages": {
+          "description": "'auto' (agents design the pages) or a list of pages; a page may be partial (only a name, or some assets)",
+          "oneOf": [{"const": "auto"}, {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/page"}}]
+        },
+        "allow_new_pages": {"type": "boolean", "default": false,
+                            "description": "With a page list: agents may add pages for assets that fit none of the listed ones"}
+      }
+    },
+    "page": {
+      "type": "object", "additionalProperties": false, "required": ["name"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id", "description": "Default: derived from the name"},
+        "name": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "description": "Missing: written by the page designer agent"},
+        "owner": {"type": "string", "description": "Default: the subdomain owner"},
+        "assets": {"type": "array", "items": {"type": "string"},
+                   "description": "Assets placed on this page ('schema.name' or 'catalog.schema.name'); the rest are placed by agents"}
+      }
+    },
+    "term": {
+      "type": "object", "additionalProperties": false, "required": ["term", "definition"],
+      "properties": {
+        "term": {"type": "string", "minLength": 1},
+        "definition": {"type": "string", "minLength": 10},
+        "synonyms": {"type": "array", "items": {"type": "string"}},
+        "links": {"type": "array", "items": {"type": "string"},
+                  "description": "Objects ('schema.name') or fields ('schema.name.column' / 'schema.metric_view.measure') implementing the term"}
+      }
+    }
+  }
+}

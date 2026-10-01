@@ -1,0 +1,90 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "roles"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[A-Za-z0-9_]+(\\.[A-Za-z0-9_]+)?$",
+               "description": "Where the mask and row filter functions and the audit view live: 'schema' (foundation catalog) or 'catalog.schema'"},
+    "writers": {"type": "array", "items": {"$ref": "#/$defs/principal"}, "default": [],
+                "description": "Identities that build the data product (the foundation jobs' run-as). Exempt from every mask and row filter, so they never copy masked values."},
+    "catalog_access": {"enum": ["grant", "existing"], "default": "grant",
+                       "description": "grant: MAYA grants USE CATALOG to every role; existing: catalog access is managed by the platform and only verified"},
+    "roles": {"type": "object", "minProperties": 1, "additionalProperties": {"$ref": "#/$defs/role"}},
+    "sensitive": {"type": "object", "additionalProperties": false,
+                  "default": {"tag": "sensitivity", "values": ["pii"]},
+                  "properties": {"tag": {"type": "string"}, "values": {"type": "array", "minItems": 1, "items": {"type": "string"}}},
+                  "description": "Column tag values (set by G1) that must be masked"},
+    "mask_functions": {"type": "object", "additionalProperties": {"$ref": "#/$defs/mask_function"}, "default": {}},
+    "masks": {"type": "array", "default": [], "items": {"oneOf": [{"$ref": "#/$defs/abac"}, {"$ref": "#/$defs/column_mask"}]}},
+    "row_filters": {"type": "array", "default": [], "items": {"$ref": "#/$defs/row_filter"}},
+    "audit": {"type": "object", "additionalProperties": false, "default": {"view": "audit_access", "days": 90},
+              "properties": {"view": {"$ref": "#/$defs/name"}, "days": {"type": "integer", "minimum": 1}}},
+    "jobs": {"type": "array", "items": {"type": "string"}, "default": [],
+             "description": "Names of jobs whose run-as identity is checked (the bundle's deploy job is always checked)"},
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental"}
+  },
+  "$defs": {
+    "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,62}$"},
+    "principal": {"type": "string", "minLength": 1,
+                  "description": "Account group name, user e-mail or service principal application id"},
+    "scope": {"type": "string",
+              "description": "bronze | silver | gold (foundation layers), metric_views (G2 schema), semantic (G3 schema), governance (this goal's schema), or 'schema' / 'catalog.schema'"},
+    "role": {
+      "type": "object", "additionalProperties": false, "required": ["principals"],
+      "properties": {
+        "principals": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/principal"}},
+        "consumer": {"type": "boolean", "default": false,
+                     "description": "Consumers may only read Gold, metric views, semantic and governance objects"},
+        "read": {"type": "array", "items": {"$ref": "#/$defs/scope"}, "description": "SELECT on every table and view of these schemas"},
+        "execute": {"type": "array", "items": {"$ref": "#/$defs/scope"}, "description": "EXECUTE on every function of these schemas"},
+        "objects": {"type": "object", "additionalProperties": false,
+                    "properties": {"select": {"type": "array", "items": {"type": "string"}},
+                                   "execute": {"type": "array", "items": {"type": "string"}}},
+                    "description": "Individual tables / views ('schema.name') or functions"}
+      }
+    },
+    "mask_function": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "kind": {"enum": ["redact", "null", "hash", "email", "last4"],
+                 "description": "redact: '***'; null: NULL; hash: SHA-256; email: keeps the domain; last4: keeps the last 4 characters"},
+        "sql": {"type": "string", "description": "Masked value as a SQL expression over the input 'value' (instead of kind)"},
+        "type": {"type": "string", "default": "STRING", "description": "Data type of the masked columns"},
+        "unmasked_for": {"type": "array", "items": {"$ref": "#/$defs/principal"}, "default": [],
+                         "description": "Principals who see the real value (writers always do)"},
+        "comment": {"type": "string"}
+      },
+      "oneOf": [{"required": ["kind"]}, {"required": ["sql"]}]
+    },
+    "abac": {
+      "type": "object", "additionalProperties": false, "required": ["abac", "scopes", "match", "function"],
+      "properties": {
+        "abac": {"$ref": "#/$defs/name", "description": "Policy name"},
+        "scopes": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/scope"}, "description": "Policy is created on every schema of these scopes"},
+        "match": {"type": "object", "additionalProperties": false, "required": ["tag", "value"],
+                  "properties": {"tag": {"type": "string"}, "value": {"type": "string"}}},
+        "function": {"$ref": "#/$defs/name"},
+        "except": {"type": "array", "items": {"$ref": "#/$defs/principal"}, "default": []}
+      }
+    },
+    "column_mask": {
+      "type": "object", "additionalProperties": false, "required": ["column", "function"],
+      "properties": {
+        "column": {"type": "string", "description": "'schema.table.column' or 'catalog.schema.table.column'"},
+        "function": {"$ref": "#/$defs/name"}
+      }
+    },
+    "row_filter": {
+      "type": "object", "additionalProperties": false, "required": ["table", "columns"],
+      "properties": {
+        "table": {"type": "string"},
+        "columns": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "by_group": {"type": "object", "additionalProperties": {"type": "array", "items": {"type": ["string", "number"]}},
+                     "description": "principal -> values of the (single) column that principal sees"},
+        "sql": {"type": "string", "description": "Boolean SQL over the column names (instead of by_group)"},
+        "unfiltered_for": {"type": "array", "items": {"$ref": "#/$defs/principal"}, "default": []}
+      },
+      "oneOf": [{"required": ["by_group"]}, {"required": ["sql"]}]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": ["layers", "unreadable", "empty", "undocumented"],
+  "properties": {
+    "layers": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["assets", "below_minimum", "stale"],
+        "properties": {
+          "assets": {"type": "integer", "minimum": 0},
+          "below_minimum": {"type": "boolean"},
+          "stale": {"type": "boolean"},
+          "newest_update": {"type": ["string", "null"]},
+          "age_hours": {"type": ["number", "null"]},
+          "freshness_limit_hours": {"type": ["number", "null"]}
+        }
+      }
+    },
+    "unreadable": {"type": "array", "items": {"type": "string"}},
+    "empty": {"type": "array", "items": {"type": "string"}},
+    "undocumented": {"type": "array", "items": {"type": "string"}}
+  }
+}

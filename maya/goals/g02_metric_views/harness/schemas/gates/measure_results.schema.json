@@ -1,0 +1,21 @@
+{
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "required": ["metric_view", "measure", "by", "ok", "view_sql", "reference_sql"],
+    "properties": {
+      "metric_view": {"type": "string"},
+      "measure": {"type": "string"},
+      "by": {"type": "array", "items": {"type": "string"}},
+      "ok": {"type": "boolean"},
+      "groups": {"type": "integer", "minimum": 0},
+      "value": {"type": "string"},
+      "max_relative_difference": {"type": "number", "minimum": 0},
+      "mismatches": {"type": "array"},
+      "problem": {"type": "string"},
+      "view_sql": {"type": "string"},
+      "reference_sql": {"type": "string"}
+    }
+  }
+}

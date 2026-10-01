@@ -1,0 +1,35 @@
+nodes:
+  load:       {type: code, run: definitions.load}
+  render:     {type: code, run: definitions.render}
+  critique:
+    type: agent
+    agent: metric_reviewer
+    task: review one metric view definition for business-friendliness and reference SQL independence
+    for_each: render.views
+    input: definitions.reviewer_input
+    schema: harness/schemas/review.schema.json
+    output: reviews.json
+    concurrency: 4
+  collect:    {type: code, run: definitions.collect_review}
+  review:
+    type: gate
+    approver: data_steward
+    skip_when_empty: true
+    items:
+      review.json: {schema: harness/schemas/gates/review.schema.json, check: gate_checks.review}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: kpi_owner
+    items:
+      measure_results.json: {schema: harness/schemas/gates/measure_results.schema.json, check: gate_checks.measure_results}
+  mark:       {type: code, run: apply.mark_certified}
+  certify:    {type: certify}
+edges:
+  - load -> render -> critique -> collect -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

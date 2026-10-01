@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.egg-info/
+.maya/
+reports/
+examples/*/foundation/data/
+.databricks/
+
+# Generated per workspace by `maya run` / `maya bundle` (holds that workspace's host, warehouse and principals)
+examples/*/bundle/

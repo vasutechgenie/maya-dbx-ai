@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["assignments"],
+  "properties": {
+    "assignments": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["asset", "page", "confidence", "rationale"],
+        "properties": {
+          "asset": {"type": "string", "description": "full_name exactly as given"},
+          "page": {"type": "string", "description": "id of one of the listed pages"},
+          "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+          "rationale": {"type": "string", "maxLength": 300}
+        }
+      }
+    }
+  }
+}

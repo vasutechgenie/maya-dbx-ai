@@ -1,0 +1,42 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G1
+  name: metadata
+  title: Metadata
+  description: >
+    Describe every certified foundation asset at table, column and view level, classify column sensitivity
+    (deterministic rules first, the describer agent for everything the rules do not cover), establish verified
+    primary and foreign keys, and write it all to Unity Catalog as comments, tags and informational constraints.
+spec:
+  prerequisites: [G0]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 2}
+  drift: ledger.drift
+  outputs:
+    - {name: proposals.json, kind: artefact}
+    - {name: unity_catalog_comments_tags_constraints, kind: workspace}
+  validation:
+    - {id: table_descriptions, check: undescribed_assets, expect: "== 0", severity: mandatory, checklist: metadata.tables,
+       description: Every in-scope table and view has a description in Unity Catalog}
+    - {id: column_descriptions, check: undescribed_columns, expect: "== 0", severity: mandatory, checklist: metadata.columns,
+       description: Every column of every full-scope asset has a description}
+    - {id: description_quality, check: weak_descriptions, expect: "== 0", severity: mandatory, checklist: metadata.quality,
+       description: Descriptions are specific (minimum length, not a restatement of the name, no placeholders)}
+    - {id: sensitivity_tagged, check: untagged_columns, expect: "== 0", severity: mandatory, checklist: governance.classification,
+       description: Every in-scope column carries a sensitivity tag with an allowed value}
+    - {id: sensitivity_rules, check: rule_violations, expect: "== 0", severity: mandatory, checklist: governance.classification,
+       description: Columns matched by a sensitivity rule carry the class the rule requires}
+    - {id: declared_keys, check: missing_declared_keys, expect: "== 0", severity: mandatory, checklist: metadata.keys,
+       description: Every primary key declared in maya.yaml exists as a constraint}
+    - {id: keys_hold, check: invalid_keys, expect: "== 0", severity: mandatory, checklist: metadata.keys,
+       description: Every primary key is unique and not null, every foreign key resolves, in the current data}
+    - {id: proposals_applied, check: unapplied_proposals, expect: "== 0", severity: mandatory, checklist: metadata.lineage,
+       description: Unity Catalog matches the approved proposals}
+    - {id: key_coverage, check: tables_without_pk, expect: ">= 0", severity: advisory, checklist: metadata.keys,
+       description: Full-scope tables without a verified primary key (informational)}
+  certification:
+    approvers: [data_steward, data_owner]
+    valid_days: 90

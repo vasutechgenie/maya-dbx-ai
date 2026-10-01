@@ -1,0 +1,38 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G2
+  name: metric_views
+  title: Metric views
+  description: >
+    Every KPI defined once as a Unity Catalog metric view. The user supplies the complete definition of each view in
+    YAML (source, joins, dimensions, measures with display names, descriptions, synonyms and formats) and, for every
+    measure, an independent reference SQL. MAYA renders and creates the views, keeps existing tags and grants across
+    re-creation, proves every measure against its reference SQL, and certifies the views once the KPI owner signs off.
+spec:
+  prerequisites: [G1]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: definitions.json, kind: artefact}
+    - {name: measure_results.json, kind: artefact}
+    - {name: unity_catalog_metric_views, kind: workspace}
+  validation:
+    - {id: metric_views_exist, check: missing_metric_views, expect: "== 0", severity: mandatory, checklist: AE-6.1,
+       description: Every KPI in the definitions exists as a Unity Catalog metric view}
+    - {id: definitions_applied, check: definition_differences, expect: "== 0", severity: mandatory, checklist: AE-6.1,
+       description: The definition read back from Unity Catalog is exactly the approved one}
+    - {id: business_friendly, check: unfriendly_fields, expect: "== 0", severity: mandatory, checklist: AE-6.2,
+       description: Every measure and dimension has a display name, description and synonyms; every measure a format}
+    - {id: measures_match_reference, check: mismatched_measures, expect: "== 0", severity: mandatory, checklist: AE-6.3,
+       description: Every measure equals its independent reference SQL within tolerance (overall and by the given dimensions)}
+    - {id: views_described, check: undescribed_metric_views, expect: "== 0", severity: mandatory, checklist: AE-5.1,
+       description: Every metric view has a specific description}
+    - {id: reviewer_warnings, check: reviewer_warnings, expect: ">= 0", severity: advisory, checklist: AE-6.2,
+       description: Warnings raised by the reviewer agent on views created or changed in this run (informational)}
+  certification:
+    approvers: [kpi_owner, data_steward]
+    valid_days: 90

@@ -1,0 +1,9 @@
+name: metadata_describer
+description: Writes business descriptions and sensitivity classifications for one data asset from its profile.
+instructions: metadata_describer.md
+# executor (model via Databricks AI Gateway + workspace auth) and the MAYA tools are injected at run time from maya.yaml
+policies:
+  tool_budget:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params: {limit: 8}

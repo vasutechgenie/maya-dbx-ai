@@ -1,0 +1,69 @@
+# Semantic model of the commercial data product (MAYA G3): domain > subdomain > page.
+#
+# Domains and subdomains are declared completely: id (the controlled tag value), name, description, owner.
+# Pages, per subdomain, any of:
+#   pages: auto                      agents design the pages and place the assets
+#   pages: [{name: ...}]             partial: agents write what is missing (description) and place the other assets
+#   pages: [{id, name, description, assets: [...]}]   complete: used exactly as written
+#   allow_new_pages: true            with a page list, agents may add pages for assets that fit none of them
+# Every Silver, Gold and metric-view asset ends on exactly one page; assets not listed under a page are placed by
+# agents. After a run, artefacts/taxonomy.resolved.yaml holds the full result in this format: use it as this file
+# to fix agent-built pages.
+domains:
+  - id: commercial
+    name: Commercial
+    description: Selling cloud products to business customers - orders, revenue and the customers who buy.
+    owner: sales-analytics@example.com
+    subdomains:
+      - id: sales
+        name: Sales
+        description: Order intake and net revenue by day, region and product.
+        pages:
+          - id: sales_performance
+            name: Sales performance
+            description: Daily net revenue, orders, units and average order value by region, product and category.
+            assets: [maya_gold.sales_daily, maya_metrics.sales_performance, maya_silver.orders]
+      - id: customers
+        name: Customers
+        description: Who the business customers are, their segments and what they buy.
+        pages: auto
+
+  - id: operations
+    name: Operations
+    description: Getting ordered products to customers and handling what comes back.
+    owner: supply-chain-analytics@example.com
+    subdomains:
+      - id: fulfilment
+        name: Fulfilment
+        description: Shipping ordered units to customers and how completely orders are filled.
+        pages:
+          - name: Order fulfilment
+      - id: returns
+        name: Returns
+        description: Products customers send back, how many, why and what they were worth.
+        owner: customer-service@example.com
+        pages: auto
+
+  - id: reference
+    name: Reference data
+    description: Shared master data every domain uses - the product catalogue and the sales regions.
+    owner: data-products@example.com
+    subdomains:
+      - id: master_data
+        name: Master data
+        description: Conformed product and region reference tables shared across the data product.
+        pages: auto
+
+glossary:
+  - term: Revenue
+    definition: Quantity times unit price for orders that are not cancelled, in USD.
+    synonyms: [net sales, sales]
+    links: [maya_metrics.sales_performance.revenue, maya_gold.sales_daily.revenue]
+  - term: Fill rate
+    definition: Units shipped divided by units ordered for shipped orders.
+    synonyms: [unit fill rate]
+    links: [maya_metrics.fulfilment.fill_rate]
+  - term: Customer segment
+    definition: Customer size band - Enterprise, Mid-Market, SMB or Public Sector.
+    synonyms: [segment, customer type, tier]
+    links: [maya_silver.customer.segment, maya_metrics.customer_orders.segment]

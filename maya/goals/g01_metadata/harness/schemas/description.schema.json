@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["asset", "description", "grain", "columns"],
+  "properties": {
+    "asset": {"type": "string", "description": "full_name of the asset, exactly as given"},
+    "description": {"type": "string", "minLength": 20, "maxLength": 600},
+    "grain": {"type": "string", "description": "What one row represents"},
+    "primary_key": {"type": "array", "items": {"type": "string"},
+                    "description": "Columns that should uniquely identify a row, if any"},
+    "columns": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["name", "sensitivity"],
+        "properties": {
+          "name": {"type": "string"},
+          "description": {"type": "string", "maxLength": 400},
+          "sensitivity": {"type": "string"},
+          "sensitivity_reason": {"type": "string"},
+          "references": {"type": "string", "description": "<full_name of the parent asset>.column this column is a foreign key to, if any"}
+        }
+      }
+    }
+  }
+}

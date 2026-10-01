@@ -1,0 +1,41 @@
+apiVersion: maya/v1
+kind: System
+metadata:
+  name: supply-chain
+  owner: supply-chain-analytics@example.com
+  description: Order fulfilment and returns data product; a second MAYA project on the same workspace.
+target:
+  profile: ${env:DATABRICKS_CONFIG_PROFILE}
+  warehouse_id: ${env:MAYA_WAREHOUSE_ID}
+  state_schema: solution_builder.maya_state_supply_chain   # this project's own state (goal runs, checks, approvals, certifications)
+  registry: solution_builder.maya_registry           # workspace-wide project list (portfolio dashboard), shared by all projects
+ai_gateway:
+  model: system.ai.claude-sonnet-4-6
+  harness: openai-agents
+foundation:
+  catalog: solution_builder
+  layers:
+    bronze: {schemas: [maya_bronze], tables: [raw_orders, raw_shipments, raw_returns], metadata_scope: tables}
+    silver: {schemas: [maya_silver], tables: [orders, shipment, returns]}
+    gold:   {schemas: [maya_gold],   tables: [shipment_fill_daily, "returns_*"]}
+goals:
+  G0:
+    freshness_hours: {gold: 48}
+  G1:
+    allow_data: true
+    sensitivity_classes: [public, internal, pii]   # the workspace's governed 'sensitivity' tag allows only these
+    sensitivity_rules:
+      - {pattern: "(?i)(^|_)e_?mail(_|$)", class: pii}
+      - {pattern: "(?i)(^|_)(phone|mobile|fax)(_|$)", class: pii}
+      - {pattern: "(?i)(street|address_line|postcode|zip_?code)", class: pii}
+      - {pattern: "(?i)(password|secret|api_key|token)", class: pii}
+certification:
+  approvals: auto                          # gates and certification pass on validation; no manual step
+  approvers:
+    data_owner: ${env:MAYA_APPROVER}
+    data_steward: ${env:MAYA_APPROVER}
+  self_certified:                          # done outside MAYA; the goals after them can run
+    G0: {by: data-platform@example.com, note: supply-chain foundation attested by the data platform team}
+status:
+  formats: [html, json]
+  out_dir: reports/

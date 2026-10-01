@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "min_assets_per_layer": {"type": "integer", "minimum": 1, "default": 1},
+    "freshness_hours": {"type": "object", "additionalProperties": {"type": "number", "minimum": 1}, "default": {},
+                        "description": "Per-layer maximum hours since the newest asset in that layer was updated"},
+    "row_counts": {"type": "boolean", "default": true, "description": "Count rows of every asset (disable for very large foundations)"},
+    "model": {"type": "string", "description": "Override the AI Gateway model for this goal's agents"}
+  }
+}

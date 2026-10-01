@@ -1,0 +1,8 @@
+business: A software vendor selling cloud products to business customers in six regions.
+glossary:
+  fill rate: Units shipped divided by units ordered for shipped orders.
+  revenue: Quantity times unit price for orders that are not cancelled.
+  segment: Customer size band (Enterprise, Mid-Market, SMB, Public Sector).
+conventions:
+  - Monetary amounts are in USD.
+  - Dates are UTC calendar dates.

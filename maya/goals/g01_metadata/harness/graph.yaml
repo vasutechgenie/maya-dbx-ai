@@ -1,0 +1,33 @@
+nodes:
+  scope:      {type: code, run: profile.scope}
+  profile:    {type: code, run: profile.profile}
+  describe:
+    type: agent
+    agent: metadata_describer
+    task: describe one data asset and classify its columns
+    for_each: profile.assets
+    input: proposals.describer_input
+    schema: harness/schemas/description.schema.json
+    output: descriptions.json
+    concurrency: 4
+  propose:    {type: code, run: proposals.build}
+  keys:       {type: code, run: keys.verify}
+  review:
+    type: gate
+    approver: data_steward
+    skip_when_empty: true
+    items:
+      review.json:
+        schema: harness/schemas/gates/review.schema.json
+        check: gate_checks.review
+        editable: true
+        on_edit: gate_checks.accept_review_edit
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  certify:    {type: certify}
+edges:
+  - scope -> profile -> describe -> propose -> keys -> review -> apply -> validate
+  - validate -> certify when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
