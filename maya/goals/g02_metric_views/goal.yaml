@@ -4,6 +4,7 @@ metadata:
   id: G2
   name: metric_views
   title: Metric views
+  milestone: AI Enabled
   description: >
     Every KPI defined once as a Unity Catalog metric view. The user supplies the complete definition of each view in
     YAML (source, joins, dimensions, measures with display names, descriptions, synonyms and formats) and, for every

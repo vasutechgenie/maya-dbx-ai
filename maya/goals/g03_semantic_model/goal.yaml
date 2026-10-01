@@ -4,6 +4,7 @@ metadata:
   id: G3
   name: semantic_model
   title: Semantic model
+  milestone: AI Enabled
   description: >
     The business taxonomy domain > subdomain > page over the data product. The user declares the domains and
     subdomains completely in YAML. Pages are declared fully, partly (a name, some assets) or left to MAYA ('auto'):

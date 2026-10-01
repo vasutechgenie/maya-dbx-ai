@@ -166,7 +166,9 @@ def _summarise(items):
 
 
 def config_hash(goal: Goal, inputs: dict, system: System):
-    return stable_hash({"goal": goal.spec, "inputs": inputs, "foundation": system.layers})
+    # The milestone only groups goals for reporting; changing it must not invalidate certifications.
+    spec = {**goal.spec, "metadata": {k: v for k, v in goal.spec["metadata"].items() if k != "milestone"}}
+    return stable_hash({"goal": spec, "inputs": inputs, "foundation": system.layers})
 
 
 def utc_stamp():

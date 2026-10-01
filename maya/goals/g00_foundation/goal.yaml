@@ -4,6 +4,7 @@ metadata:
   id: G0
   name: foundation
   title: Foundation intake
+  milestone: AI Enabled
   description: >
     Read-only intake of the existing Bronze/Silver/Gold foundation declared in maya.yaml: inventory every asset,
     assess readability, emptiness and freshness, have an analyst agent attest to readiness and gaps, then certify.

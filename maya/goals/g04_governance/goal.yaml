@@ -4,6 +4,7 @@ metadata:
   id: G4
   name: governance
   title: Governance and access
+  milestone: AI Enabled
   description: >
     Least-privilege access and protected sensitive data, all declared in YAML. Roles map groups or service
     principals to what they may read or execute. Every column G1 tagged sensitive is masked by exactly one

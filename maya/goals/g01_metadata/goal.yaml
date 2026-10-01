@@ -4,6 +4,7 @@ metadata:
   id: G1
   name: metadata
   title: Metadata
+  milestone: AI Enabled
   description: >
     Describe every certified foundation asset at table, column and view level, classify column sensitivity
     (deterministic rules first, the describer agent for everything the rules do not cover), establish verified
