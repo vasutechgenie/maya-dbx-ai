@@ -145,6 +145,14 @@ goals:
     genie_pass_threshold: 0.8              # and the Genie space
     regression:                            # the job reruns when a source table of the metric views changes
       notify: ["${env:MAYA_APPROVER}"]     # and tells these owners when a pass rate drops below its threshold
+  G12:                                     # AI Ready: runs without its builders; documented for users and operators
+    notify: ["${env:MAYA_APPROVER}"]       # every production job notifies these owners when it fails
+    production_jobs: [maya_example_foundation]   # jobs outside MAYA that feed the product (checked, never changed)
+    min_retries: 1
+    dashboard:
+      title: Commercial analytics operations
+      viewers: ["${env:MAYA_ENGINEER_GROUP}"]
+    support: the data products team (see metadata.owner)
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

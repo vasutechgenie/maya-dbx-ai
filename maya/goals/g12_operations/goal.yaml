@@ -1,0 +1,44 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G12
+  name: operations
+  title: Operations and documentation
+  milestone: AI Ready
+  description: >
+    The data product runs without its builders and new users find their way. MAYA reads the production jobs (its own
+    scheduled or triggered jobs and the declared jobs that feed the product) and checks each one runs on its own,
+    retries and notifies the owners on failure. The bundle delivers a monitoring dashboard (evaluation pass rates, data
+    quality, freshness, production job runs from the system tables, agent traffic from the inference table) and the
+    documentation the tech_writer agent writes from what the earlier goals certified: product documentation, an
+    onboarding page and a runbook per production job and served component. MAYA checks every document covers what it
+    must and certifies once the platform owner signs off.
+spec:
+  prerequisites: [G10, G11]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: operations_plan.json, kind: artefact}
+    - {name: operations_review.json, kind: artefact}
+    - {name: monitoring_dashboard, kind: workspace}
+    - {name: documentation, kind: workspace}
+  validation:
+    - {id: jobs_operable, check: jobs_not_operable, expect: "== 0", severity: mandatory, checklist: AR-7.1,
+       description: Every production job runs on its own, retries failed tasks and notifies the owners when it fails}
+    - {id: monitored, check: monitoring_gaps, expect: "== 0", severity: mandatory, checklist: AR-7.3,
+       description: The monitoring dashboard is published with every query running, and the agents endpoint records an inference table}
+    - {id: runbooks, check: runbook_gaps, expect: "== 0", severity: mandatory, checklist: AR-7.4,
+       description: A runbook for every production job and served component, in the workspace}
+    - {id: documented, check: product_doc_gaps, expect: "== 0", severity: mandatory, checklist: AR-8.1,
+       description: The product documentation covers data, metrics, AI access, quality, evaluation and owners}
+    - {id: onboarding, check: onboarding_gaps, expect: "== 0", severity: mandatory, checklist: AR-8.2,
+       description: The onboarding page tells a new user how to get access, ask questions and get help}
+    - {id: recent_failures, check: recent_failures, expect: ">= 0", severity: advisory, checklist: AR-7.1,
+       description: Production jobs whose recent runs failed (informational)}
+  certification:
+    approvers: [platform_owner]
+    valid_days: 90

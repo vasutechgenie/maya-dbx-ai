@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["jobs", "documents", "monitoring"],
+  "properties": {
+    "jobs": {"type": "array", "items": {"type": "object", "required": ["name", "problems"]}},
+    "documents": {"type": "object"},
+    "monitoring": {"type": "array", "items": {"type": "string"}}
+  }
+}

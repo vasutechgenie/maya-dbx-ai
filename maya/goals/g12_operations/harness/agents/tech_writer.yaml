@@ -1,0 +1,9 @@
+name: tech_writer
+description: Writes one document of a data product's documentation (product doc, onboarding page or runbook) from facts.
+instructions: tech_writer.md
+# executor (model via Databricks AI Gateway + workspace auth) and the MAYA tools are injected at run time from maya.yaml
+policies:
+  tool_budget:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params: {limit: 4}

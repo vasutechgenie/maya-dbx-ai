@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: docs.load}
+  write:
+    type: agent
+    agent: tech_writer
+    task: write one document of the data product's documentation from the facts given
+    for_each: load.documents
+    input: docs.writer_input
+    schema: harness/schemas/document.schema.json
+    output: documents.json
+    concurrency: 4
+  plan:       {type: code, run: docs.plan}
+  review:
+    type: gate
+    approver: platform_owner
+    items:
+      operations_plan.json: {schema: harness/schemas/gates/operations_plan.schema.json, check: gate_checks.operations_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: platform_owner
+    items:
+      operations_review.json: {schema: harness/schemas/gates/operations_review.schema.json, check: gate_checks.operations_review}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> write -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

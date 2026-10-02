@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "notify": {"type": "array", "items": {"type": "string"}, "description": "Emails every production job must notify when it fails"},
+    "production_jobs": {"type": "array", "items": {"type": "string"}, "description": "Names of jobs outside MAYA that feed the product (checked, never changed)"},
+    "min_retries": {"type": "integer", "minimum": 0, "default": 1, "description": "Retries every task of a production job must have"},
+    "dashboard": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string", "default": "Operations monitoring"},
+        "parent_path": {"type": "string", "default": "MAYA"},
+        "viewers": {"type": "array", "items": {"type": "string"}, "description": "Groups that may view it (CAN_RUN)"}
+      }
+    },
+    "support": {"type": "string", "description": "Where users and operators get help (channel, mailing list, ticket queue)"},
+    "docs": {
+      "type": "object", "additionalProperties": false,
+      "properties": {"audience": {"type": "string", "description": "Who reads the documentation (default per document)"}}
+    },
+    "model": {"type": "string", "description": "Model of the tech_writer agent (default: the harness model)"}
+  }
+}

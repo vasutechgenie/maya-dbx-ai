@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["doc_id", "title", "markdown"],
+  "properties": {
+    "doc_id": {"type": "string"},
+    "title": {"type": "string", "minLength": 5, "maxLength": 200},
+    "markdown": {"type": "string", "minLength": 400, "maxLength": 40000}
+  }
+}
