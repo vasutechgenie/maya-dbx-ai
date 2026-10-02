@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "required": ["endpoint", "model", "users", "runtime", "routing_examples", "dry_run", "version", "identity"],
+  "properties": {
+    "endpoint": {"type": "string"},
+    "model": {"type": "string", "pattern": "^[^.]+\\.[^.]+\\.[^.]+$"},
+    "users": {"type": "array", "items": {"type": "string"}},
+    "version": {"type": ["string", "null"]},
+    "runtime": {
+      "type": ["object", "null"],
+      "required": ["supervisor", "sub_agents", "llm_endpoint"],
+      "properties": {
+        "supervisor": {"type": "object", "required": ["name", "prompt", "tools"]},
+        "sub_agents": {"type": "array", "minItems": 2, "items": {"type": "object", "required": ["name", "prompt", "tools"]}}
+      }
+    },
+    "dry_run": {"type": "array", "items": {"type": "object", "required": ["question", "passed"]}}
+  }
+}

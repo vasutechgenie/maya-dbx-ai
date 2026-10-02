@@ -1,0 +1,9 @@
+name: agent_engineer
+description: Writes the prompts, tool sets and routing of a supervisor agent and its sub-agents.
+instructions: agent_engineer.md
+# executor (model via Databricks AI Gateway + workspace auth) and the MAYA tools are injected at run time from maya.yaml
+policies:
+  tool_budget:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params: {limit: 8}

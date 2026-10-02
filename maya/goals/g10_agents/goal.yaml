@@ -1,0 +1,44 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G10
+  name: agents
+  title: Agents
+  milestone: AI Ready
+  description: >
+    The data product's agents: a supervisor that routes each question to sub-agents with small tool sets (the G8 tool
+    functions, the G5 Genie space, the G9 operations tools, and the G3 ontology lookup for business terms). The
+    product owner names the agents, their purposes and routing examples; the agent_engineer agent writes the prompts,
+    tool sets and routing, and MAYA adds the rules every prompt carries (answer only from tool results). MAYA runs
+    every routing example locally, the product owner approves the design, and the bundle delivers the code and a job
+    that registers the agents in Unity Catalog and serves them on Model Serving with every resource declared and
+    tracing on. MAYA then asks the served agents every example and certifies once the product owner signs off.
+spec:
+  prerequisites: [G5, G8, G9]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: agents_plan.json, kind: artefact}
+    - {name: agent_tests.json, kind: artefact}
+    - {name: registered_model, kind: workspace}
+    - {name: serving_endpoint, kind: workspace}
+  validation:
+    - {id: routed_as_designed, check: routing_failures, expect: "== 0", severity: mandatory, checklist: AR-5.1,
+       description: A supervisor routes to at least two sub-agents with small tool sets, and the served agents route every example as expected}
+    - {id: registered_and_served, check: serving_gaps, expect: "== 0", severity: mandatory, checklist: AR-5.2,
+       description: Registered in Unity Catalog (alias champion) and served at that version with the agent identity's credentials from a secret scope and every tool declared as a resource}
+    - {id: grounded_and_traced, check: ungrounded_design, expect: "== 0", severity: mandatory, checklist: AR-5.3,
+       description: Every prompt forbids inventing numbers, and every served answer returns the trace of its tool calls}
+    - {id: access_granted, check: missing_access, expect: "== 0", severity: mandatory, checklist: AR-5.2,
+       description: Every declared user may query the endpoint}
+    - {id: numbers_in_tool_results, check: unsupported_numbers, expect: ">= 0", severity: advisory, checklist: AR-5.3,
+       description: Numbers in served answers that appear in no tool result of that answer (informational)}
+    - {id: semantic_routing, check: semantic_routing, expect: ">= 0", severity: advisory, checklist: AR-5.4,
+       description: The supervisor can look business terms up in the semantic model before routing}
+  certification:
+    approvers: [product_owner]
+    valid_days: 90

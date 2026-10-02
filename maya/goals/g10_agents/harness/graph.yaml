@@ -1,0 +1,32 @@
+nodes:
+  load:       {type: code, run: design.load}
+  engineer:
+    type: agent
+    agent: agent_engineer
+    task: write the prompts, tool sets and routing of a supervisor and its sub-agents
+    for_each: load.design
+    input: design.engineer_input
+    schema: harness/schemas/design.schema.json
+    output: design.json
+  plan:       {type: code, run: design.plan}
+  review:
+    type: gate
+    approver: product_owner
+    items:
+      agents_plan.json: {schema: harness/schemas/gates/agents_plan.schema.json, check: gate_checks.agents_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: product_owner
+    items:
+      agent_tests.json: {schema: harness/schemas/gates/agent_tests.schema.json, check: gate_checks.agent_tests}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> engineer -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

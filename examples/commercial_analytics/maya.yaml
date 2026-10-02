@@ -131,6 +131,13 @@ goals:
     operations: ops/operations.yaml        # the platform team's operations; MAYA adds table_status and quality_checks
     clients:                               # CAN_USE on the app (OAuth only); the agent identity is always included
       - "${env:MAYA_ENGINEER_GROUP}"
+  G10:                                     # AI Ready: a supervisor with sub-agents, registered and served
+    agents: agents/agents.yaml             # the product owner's agents, their purposes and routing examples
+    endpoint: maya-commercial-agents       # Model Serving endpoint
+    schema: maya_agents                    # registered model: <catalog>.maya_agents.commercial_insights
+    users:                                 # CAN_QUERY on the endpoint
+      - "${env:MAYA_CONSUMER_GROUP}"
+      - "${env:MAYA_ENGINEER_GROUP}"
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

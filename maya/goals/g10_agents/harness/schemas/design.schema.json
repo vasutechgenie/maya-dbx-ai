@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["supervisor_prompt", "sub_agents", "routing_examples"],
+  "properties": {
+    "supervisor_prompt": {"type": "string", "minLength": 100, "maxLength": 6000},
+    "sub_agents": {
+      "type": "array", "minItems": 2, "maxItems": 8,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["name", "routing_description", "prompt", "tools"],
+        "properties": {
+          "name": {"type": "string"},
+          "routing_description": {"type": "string", "minLength": 30, "maxLength": 800},
+          "prompt": {"type": "string", "minLength": 100, "maxLength": 6000},
+          "tools": {"type": "array", "minItems": 1, "maxItems": 20, "items": {"type": "string"}}
+        }
+      }
+    },
+    "routing_examples": {
+      "type": "array", "maxItems": 6,
+      "items": {"type": "object", "additionalProperties": false, "required": ["question", "route"],
+                "properties": {"question": {"type": "string"}, "route": {"type": "array", "items": {"type": "string"}}}}
+    }
+  }
+}

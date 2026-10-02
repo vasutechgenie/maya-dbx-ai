@@ -106,6 +106,10 @@ class GraphRunner:
 
     def run(self, resume=False) -> dict:
         cp = Checkpoint.load(self.cp_path) if resume else None
+        if cp is not None and not cp.queue and cp.done and self.nodes[cp.done[-1]].get("type") == "validator":
+            # the run ended on failing checks: resuming validates again (after a fix), with fresh repair attempts
+            cp.attempts[cp.done[-1]] = 0
+            cp.queue = [cp.done[-1]]
         if cp is None:
             cp = Checkpoint()
             targets = {g.target for g in self.groups}

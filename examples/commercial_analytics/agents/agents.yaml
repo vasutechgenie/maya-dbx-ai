@@ -1,0 +1,36 @@
+# G10 input: the agents of the data product, designed by the product owner. A supervisor routes each question to one
+# or more sub-agents; each sub-agent has a small tool set. The agent_engineer agent writes the prompts and assigns the
+# tools a sub-agent does not list; MAYA adds the rules every prompt carries (answer only from tool results).
+#
+# Tools (by reference):
+#   functions           every G8 tool function          function:<name>   one of them
+#   lookup              G3 ontology_lookup (business terms)
+#   genie               the G5 Genie space
+#   ops                 every tool of the G9 MCP server  ops:<tool>        one of them
+# routing_examples: questions with the sub-agent(s) the supervisor must hand them to; MAYA asks the served agent each
+# one and checks the route (at least one per sub-agent).
+supervisor:
+  name: commercial_insights
+  purpose: >
+    Answer the commercial team's questions about sales, customers, fulfilment and returns, whether the data can be
+    trusted, and run the data product's operations on request.
+sub_agents:
+  - name: reporting
+    purpose: Governed KPI figures (revenue, orders, average order value, fill rate, returns, segments) from the agent tools.
+    tools: [functions]
+  - name: genie
+    purpose: Ad-hoc questions the reporting tools do not cover, answered by the Genie space on the metric views.
+    tools: [genie]
+  - name: data_quality
+    purpose: Whether the data is fresh and passes its data quality rules, and which rules fail.
+    tools: ["ops:table_status", "ops:quality_checks"]
+  - name: operations
+    purpose: Load newly arrived source files (always validate first) and report on operation runs.
+    tools: ["ops:load_landing_files", "ops:get_run_status", "ops:list_recent_runs"]
+routing_examples:
+  - {question: "What was revenue by region in September 2026?", route: [reporting]}
+  - {question: "How has Analytics Edge revenue developed month by month?", route: [reporting]}
+  - {question: "Which return reason costs us the most?", route: [reporting]}
+  - {question: "Which product category had the highest average order value in August 2026?", route: [genie]}
+  - {question: "Is the gold sales data up to date, and are any data quality rules failing?", route: [data_quality]}
+  - {question: "A new orders file arrived in the landing zone. Check what would be loaded, without loading it.", route: [operations]}
