@@ -14,7 +14,7 @@ from maya import __version__
 from .workspace import SqlError, lit
 
 STATE_VERSION = 2          # 1: shared state schema without version tracking; 2: one state schema per project
-DASHBOARD_VERSION = 1
+DASHBOARD_VERSION = 2
 META = "key STRING, value STRING, updated_at TIMESTAMP"
 HISTORY = ("state_version INT, from_version INT, maya_version STRING, applied_by STRING, applied_at TIMESTAMP, "
            "restore_points STRING, statements STRING")

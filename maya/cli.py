@@ -200,7 +200,12 @@ def _publish(e, report=None, quiet=True):
     try:
         report = report or status.collect(e)
         warnings = publish(e, report)
-        warnings += register(e, report, ((e.bootstrap or {}).get("dashboard") or {}).get("url"))
+        dash = (e.bootstrap or {}).get("dashboard") or {}
+        warnings += register(e, report, dash.get("url"))
+        if dash.get("dashboard_id"):
+            # A published dashboard serves cached results until it is published again.
+            e.ws.client.lakeview.publish(dash["dashboard_id"], embed_credentials=True,
+                                         warehouse_id=e.system.spec["target"]["warehouse_id"])
         for w in warnings:
             print(f"warning: {w}", file=sys.stderr)
     except Exception as ex:  # a dashboard refresh must never fail a run

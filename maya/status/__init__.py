@@ -46,6 +46,9 @@ def collect(engine) -> dict:
             actions.append(f"{gl['id']} is stale ({'; '.join(gl['stale_reasons'])}) -> re-run and re-certify")
         if gl["status"] == "invalid_config":
             actions.append(f"{gl['id']}: fix configuration: {gl['config_error']}")
+    unconfigured = [gl["id"] for gl in goals if gl["status"] == "not_configured"]
+    if unconfigured and not pending:
+        actions.append(f"configure {unconfigured[0]} -> add goals.{unconfigured[0]} to maya.yaml")
     implemented = [g["id"] for g in goals]
     return {"system": engine.system.name, "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "spec_hash": engine.system.spec_hash, "workspace": engine.ws.host, "catalogs": engine.system.catalogs,
@@ -57,7 +60,8 @@ def collect(engine) -> dict:
 
 
 _COLORS = {"certified": "#1a7f37", "ready": "#0969da", "stale": "#bf8700", "blocked": "#6e7781", "failed": "#cf222e",
-           "running": "#8250df", "awaiting_approval": "#bf8700", "awaiting_sign_off": "#bf8700", "invalid_config": "#cf222e"}
+           "running": "#8250df", "awaiting_approval": "#bf8700", "awaiting_sign_off": "#bf8700", "invalid_config": "#cf222e",
+           "not_configured": "#afb8c1"}
 
 
 def _e(v):

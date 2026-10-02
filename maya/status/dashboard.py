@@ -13,7 +13,7 @@ def _project_datasets(s, p):
             concat(checks_passed, ' / ', checks_total) AS checks, mandatory_failing, certified_by, certified_at, expires_at,
             last_run_id, last_run_status, last_run_started, last_run_ended, model, refreshed_at,
             CASE WHEN status = 'certified' THEN 1 ELSE 0 END AS is_certified,
-            CASE WHEN status = 'certified' THEN 0 ELSE 1 END AS needs_attention
+            CASE WHEN status IN ('certified', 'not_configured') THEN 0 ELSE 1 END AS needs_attention
             FROM {s}.goal_overview {w}"""),
         "checks": ("Latest checks", f"""WITH latest AS (
               SELECT goal_id, max_by(run_id, checked_at) AS run_id FROM {s}.check_results {w} GROUP BY goal_id)

@@ -59,8 +59,9 @@ class Engine:
 
     # ------------------------------------------------------------------ status
     def goal_states(self) -> dict:
-        """Status per goal: certified | stale | awaiting_* | failed | running | ready | blocked."""
+        """Status per goal: certified | stale | awaiting_* | failed | running | ready | blocked | not_configured."""
         self.ensure_state()
+        declared = self.system.spec.get("goals") or {}
         recorded = self.state.statuses()
         out = {}
         for g in self.ordered():
@@ -91,7 +92,9 @@ class Engine:
             if cert and inputs is not None and g.spec["spec"].get("drift"):
                 reasons += self._drift(g, inputs, cert)
             run_status = rec.get("status")
-            if err:
+            if err and g.id not in declared:
+                status = "not_configured"
+            elif err:
                 status = "invalid_config"
             elif cert and not reasons and run_status in (None, "certified"):
                 status = "certified"
@@ -170,6 +173,8 @@ class Engine:
         g = s["goal"]
         if s["status"] == "invalid_config":
             raise RuntimeError(f"{goal_id}: {s['config_error']}")
+        if s["status"] == "not_configured":
+            raise RuntimeError(f"{goal_id} is not configured: add goals.{goal_id} to maya.yaml ({s['config_error']})")
         if s.get("self_certified") and s["status"] == "certified":
             self.log(f"{goal_id} is self-certified in maya.yaml ({s['detail']}); remove certification.self_certified."
                      f"{goal_id} to run it with MAYA")
