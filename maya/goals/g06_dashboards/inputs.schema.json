@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title"],
+  "properties": {
+    "title": {"type": "string", "minLength": 3, "maxLength": 120,
+              "description": "Display name of the dashboard; with parent_path it locates the dashboard in every environment"},
+    "content": {"type": "string",
+                "description": "YAML file (relative to maya.yaml): the audience, KPIs and filters each page must show"},
+    "metric_views": {"type": "array", "items": {"type": "string"},
+                     "description": "Metric views the dashboard may use (full names or view names). Default: every metric view of G2"},
+    "max_tiles_per_page": {"type": "integer", "minimum": 2, "maximum": 16, "default": 8},
+    "credentials": {"type": "string", "enum": ["embedded", "viewer"], "default": "embedded",
+                    "description": "embedded: viewers see data with the publisher's access; viewer: with their own (masks and row filters of G4 apply)"},
+    "schedule": {
+      "type": "object", "additionalProperties": false, "required": ["cron"],
+      "properties": {
+        "cron": {"type": "string", "minLength": 9, "description": "Quartz cron expression, for example '0 0 7 * * ?' (07:00 daily)"},
+        "timezone": {"type": "string", "default": "UTC"},
+        "paused": {"type": "boolean", "default": false}
+      },
+      "description": "Refresh schedule; subscribers receive a snapshot after each refresh"
+    },
+    "subscribers": {
+      "type": "array", "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "user": {"type": "string", "description": "User name (email) of a workspace user"},
+          "destination": {"type": "string", "description": "Id of a notification destination (email list, Slack, Teams)"}
+        },
+        "oneOf": [{"required": ["user"]}, {"required": ["destination"]}]
+      },
+      "description": "Who receives the scheduled snapshot (needs a schedule)"
+    },
+    "access": {
+      "type": "array", "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "group": {"type": "string"},
+          "service_principal": {"type": "string"},
+          "level": {"type": "string", "enum": ["CAN_READ", "CAN_RUN", "CAN_EDIT", "CAN_MANAGE"], "default": "CAN_RUN"}
+        },
+        "oneOf": [{"required": ["group"]}, {"required": ["service_principal"]}]
+      },
+      "description": "Who may open the dashboard (account-level groups or service principals). Data access itself comes from G4"
+    },
+    "parent_path": {"type": "string", "default": "MAYA",
+                    "description": "Workspace folder of the dashboard; relative paths are under the deploying identity's home"},
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental",
+             "description": "full re-authors every page; incremental reuses the certified layout of unchanged pages"},
+    "model": {"type": "string"}
+  },
+  "$defs": {
+    "content_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "pages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+              "audience": {"type": "string", "minLength": 3},
+              "kpis": {"type": "array", "items": {"type": "string"},
+                       "description": "Measures the page must show: <metric view>.<measure>, or a measure name that only one view has"},
+              "filters": {"type": "array", "items": {"type": "string"},
+                          "description": "Dimensions the page must be filterable by"},
+              "notes": {"type": "string", "description": "Anything else the page should show, in plain language"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

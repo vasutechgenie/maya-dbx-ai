@@ -89,6 +89,16 @@ goals:
     access:                                # who may ask questions; their data access comes from G4
       - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
       - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+  G6:                                      # AI Ready: one dashboard page per semantic page, on the metric views
+    title: Commercial analytics dashboard
+    content: dashboards/pages.yaml         # audience, KPIs and filters each page must show
+    credentials: viewer                    # viewers see data with their own access, so G4's masks apply
+    schedule: {cron: "0 0 7 * * ?", timezone: UTC}   # refresh daily at 07:00
+    subscribers:
+      - {user: "${env:MAYA_APPROVER}"}
+    access:
+      - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

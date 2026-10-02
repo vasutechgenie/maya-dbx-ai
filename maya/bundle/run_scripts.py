@@ -4,10 +4,14 @@ Scripts name catalogs with tokens ({{catalog:<name in dev>}}) so the same files 
 token is replaced by the value passed with --catalog <name in dev>=<name here> (the bundle passes its variables).
 A file holds statements separated by '-- @statement' lines; a statement may be a SQL scripting block (BEGIN ... END).
 A .json file declares workspace objects SQL cannot create (catalog tokens are replaced in it too):
-{"tag_policies": [{"tag_key", "description", "values"}]} and
+{"tag_policies": [{"tag_key", "description", "values"}]} creates each governed tag or sets it to exactly the declared
+description and allowed values.
 {"genie_spaces": [{"marker", "title", "description", "parent_path", "serialized_space", "permissions"}]}: each space is
-found by the marker in its description, then updated in place or created; permissions are added, never removed
-creates each governed tag or sets it to exactly the declared description and allowed values.
+found by the marker in its description, then updated in place or created; permissions are added, never removed.
+{"dashboards": [{"marker", "title", "parent_path", "serialized_dashboard", "embed_credentials", "schedule",
+"subscribers", "permissions"}]}: each dashboard is found by its path (<parent_path>/<title>.lvdash.json), updated in
+place or created, and published; the schedule named by the marker and its subscribers are made exactly as declared
+(other schedules are left alone); permissions are added, never removed.
 Every statement is idempotent, so a file can be re-run.
 
 Standalone on purpose (needs only databricks-sdk): it runs in any workspace, without MAYA.
@@ -93,9 +97,7 @@ def find_space(client, marker):
 
 
 def genie_space(client, warehouse_id, sp):
-    parent = sp.get("parent_path") or "MAYA"
-    if not parent.startswith("/"):
-        parent = f"/Workspace/Users/{client.current_user.me().user_name}/{parent}"
+    parent = _home(client, sp.get("parent_path") or "MAYA")
     body = {"title": sp["title"], "description": f"{(sp.get('description') or '').rstrip()}\n\n{sp['marker']}".lstrip(),
             "serialized_space": json.dumps(sp["serialized_space"]), "warehouse_id": sp.get("warehouse_id") or warehouse_id}
     sid = find_space(client, sp["marker"])
@@ -111,8 +113,95 @@ def genie_space(client, warehouse_id, sp):
     return sid
 
 
+def _home(client, path):
+    return path if path.startswith("/") else f"/Workspace/Users/{client.current_user.me().user_name}/{path}"
+
+
+def _user_id(client, user_name):
+    r = client.api_client.do("GET", "/api/2.0/preview/scim/v2/Users",
+                             query={"filter": f'userName eq "{user_name}"', "attributes": "id"})
+    found = r.get("Resources") or []
+    if not found:
+        raise RuntimeError(f"subscriber {user_name} is not a workspace user")
+    return str(found[0]["id"])
+
+
+def _schedule(client, base, warehouse_id, d):
+    """Make the schedule named by the marker, and its subscribers, exactly as declared."""
+    api, want = client.api_client, d.get("schedule")
+    mine = [s for s in api.do("GET", f"{base}/schedules").get("schedules") or [] if d["marker"] in (s.get("display_name") or "")]
+    keep = None
+    for s in mine:
+        c = s.get("cron_schedule") or {}
+        same = want and keep is None and c.get("quartz_cron_expression") == want["cron"] and \
+            c.get("timezone_id") == want.get("timezone", "UTC") and \
+            s.get("pause_status") == ("PAUSED" if want.get("paused") else "UNPAUSED")
+        if same:
+            keep = s["schedule_id"]
+        else:
+            api.do("DELETE", f"{base}/schedules/{s['schedule_id']}")
+    if not want:
+        return
+    if not keep:
+        keep = api.do("POST", f"{base}/schedules", body={
+            "display_name": f"{d['title']} ({d['marker']})", "warehouse_id": warehouse_id,
+            "cron_schedule": {"quartz_cron_expression": want["cron"], "timezone_id": want.get("timezone", "UTC")},
+            "pause_status": "PAUSED" if want.get("paused") else "UNPAUSED"})["schedule_id"]
+    subs_url = f"{base}/schedules/{keep}/subscriptions"
+    wanted = {("user", _user_id(client, x["user"])) if x.get("user") else ("destination", x["destination"])
+              for x in d.get("subscribers") or []}
+    have = {}
+    for x in api.do("GET", subs_url).get("subscriptions") or []:
+        sub = x.get("subscriber") or {}
+        key = ("user", str(sub["user_subscriber"]["user_id"])) if sub.get("user_subscriber") else \
+            ("destination", (sub.get("destination_subscriber") or {}).get("destination_id"))
+        have[key] = x["subscription_id"]
+    for key, sid in have.items():
+        if key not in wanted:
+            api.do("DELETE", f"{subs_url}/{sid}")
+    for kind, ident in wanted - set(have):
+        body = {"user_subscriber": {"user_id": ident}} if kind == "user" else {"destination_subscriber": {"destination_id": ident}}
+        api.do("POST", subs_url, body={"subscriber": body})
+
+
+def dashboard(client, warehouse_id, d):
+    from databricks.sdk.errors import NotFound
+    api = client.api_client
+    parent = _home(client, d.get("parent_path") or "MAYA")
+    body = {"display_name": d["title"], "serialized_dashboard": json.dumps(d["serialized_dashboard"]),
+            "warehouse_id": d.get("warehouse_id") or warehouse_id}
+    try:
+        did = client.workspace.get_status(f"{parent}/{d['title']}.lvdash.json").resource_id
+    except NotFound:
+        did = None
+    if did:
+        api.do("PATCH", f"/api/2.0/lakeview/dashboards/{did}", body=body)
+    else:
+        client.workspace.mkdirs(parent)
+        did = api.do("POST", "/api/2.0/lakeview/dashboards", body={**body, "parent_path": parent})["dashboard_id"]
+    base = f"/api/2.0/lakeview/dashboards/{did}"
+    api.do("POST", f"{base}/published", body={"embed_credentials": bool(d.get("embed_credentials", True)),
+                                              "warehouse_id": body["warehouse_id"]})
+    _schedule(client, base, body["warehouse_id"], d)
+    acl = [{("group_name" if p.get("group") else "service_principal_name"): p.get("group") or p["service_principal"],
+            "permission_level": p.get("level", "CAN_RUN")} for p in d.get("permissions") or []]
+    if acl:
+        api.do("PATCH", f"/api/2.0/permissions/dashboards/{did}", body={"access_control_list": acl})
+    return did
+
+
 def run_json(client, warehouse_id, rel, doc, dry_run):
     n = 0
+    for i, d in enumerate(doc.get("dashboards") or []):
+        if dry_run:
+            print(f"-- {rel} #{i + 1}: dashboard {d['title']!r}, "
+                  f"{len(d['serialized_dashboard'].get('pages', []))} pages\n")
+            continue
+        try:
+            print(f"   dashboard {d['title']!r}: {dashboard(client, warehouse_id, d)}")
+        except Exception as e:
+            return n, {"failed": rel, "statement": i + 1, "error": str(e)[:2000], "sql": d["title"]}
+        n += 1
     for i, sp in enumerate(doc.get("genie_spaces") or []):
         if dry_run:
             print(f"-- {rel} #{i + 1}: Genie space {sp['title']!r} ({sp['marker']}), "

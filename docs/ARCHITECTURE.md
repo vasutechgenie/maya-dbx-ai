@@ -2,7 +2,7 @@
 
 MAYA is a goal engine. It takes an existing Bronze / Silver / Gold foundation in Unity Catalog and works through a chain
 of goals until the data product is **AI Enabled** (goals G0 to G4, available now) and then **AI Ready** (goals G5 to G12;
-G5 is available now, G6 to G12 will be released later). This page shows how the pieces fit together; each goal's own page shows its internals:
+G5 and G6 are available now, G7 to G12 will be released later). This page shows how the pieces fit together; each goal's own page shows its internals:
 
 | Goal | Architecture |
 |------|--------------|
@@ -12,6 +12,7 @@ G5 is available now, G6 to G12 will be released later). This page shows how the 
 | G3 Semantic model | [maya/goals/g03_semantic_model](../maya/goals/g03_semantic_model/README.md) |
 | G4 Governance and access | [maya/goals/g04_governance](../maya/goals/g04_governance/README.md) |
 | G5 Genie space | [maya/goals/g05_genie_space](../maya/goals/g05_genie_space/README.md) |
+| G6 AI/BI dashboards | [maya/goals/g06_dashboards](../maya/goals/g06_dashboards/README.md) |
 
 ## 1. Overall architecture
 
@@ -90,7 +91,7 @@ flowchart LR
         G1 --> G4["G4 Governance and access"]
         G2 --> G4
     end
-    subgraph AR["Milestone 2 · AI Ready (G5 available, G6 to G12 later; every goal also requires AI Enabled)"]
+    subgraph AR["Milestone 2 · AI Ready (G5 and G6 available, G7 to G12 later; every goal also requires AI Enabled)"]
         G5["G5 Genie space"]
         G6["G6 AI/BI dashboards"]
         G7["G7 DQ monitoring"]
@@ -219,7 +220,7 @@ deploys them. CI/CD deploys the same, committed bundle to other environments.
 ```mermaid
 flowchart LR
     subgraph dev["MAYA in dev"]
-        gc["Goal code<br/>apply and repair nodes"] --> sc["bundle/scripts/G1 to G5<br/>idempotent SQL and JSON<br/>declarations, catalog tokens"]
+        gc["Goal code<br/>apply and repair nodes"] --> sc["bundle/scripts/G1 to G6<br/>idempotent SQL and JSON<br/>declarations, catalog tokens"]
         gc --> mf["bundle/maya_manifest.json<br/>certified run and approver<br/>per goal"]
         sc --> dep["databricks bundle deploy<br/>bundle run maya_deploy"]
         dep --> devuc["Dev Unity Catalog"]
@@ -232,8 +233,8 @@ flowchart LR
 ```
 
 `run_scripts.py`, the job task, replaces each `{{catalog:<dev name>}}` token with the target's catalog from the
-bundle variables, so one set of files deploys anywhere. Objects the bundle cannot declare yet, such as Genie spaces,
-are JSON declarations that the same task applies through the REST API (create, or update the object it created
+bundle variables, so one set of files deploys anywhere. Objects the bundle cannot declare yet, such as Genie spaces and
+dashboard schedules, are JSON declarations that the same task applies through the REST API (create, or update the object it created
 before, then set permissions). `maya status` writes `reports/status.json`, whose
 `milestones` entry says whether AI Enabled (and AI Ready) is reached, so a pipeline can gate promotion on it.
 
@@ -287,7 +288,7 @@ erDiagram
 ```
 
 Goals add their own tables: `asset_inventory` (G0), `metadata_ledger` (G1), `metric_view_ledger` (G2),
-`semantic_ledger` (G3), `governance_ledger` (G4) and `genie_ledger` (G5). The ledgers record what each certified run delivered, which is
+`semantic_ledger` (G3), `governance_ledger` (G4), `genie_ledger` (G5) and `dashboard_ledger` (G6). The ledgers record what each certified run delivered, which is
 how drift is detected. `systems` and `goal_overview` feed the project dashboard; the optional workspace registry feeds
 the portfolio dashboard across projects.
 

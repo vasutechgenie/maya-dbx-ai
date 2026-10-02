@@ -1,0 +1,53 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G6
+  name: dashboards
+  title: AI/BI dashboards
+  milestone: AI Ready
+  description: >
+    One AI/BI dashboard over the certified metric views, with one page per page of the semantic model, named the same
+    way. The customer says which KPIs and filters each page must show and for which audience, and how the dashboard
+    is distributed (credentials, refresh schedule, subscribers). The bi_author agent drafts the tiles of each page from
+    the metric view measures; MAYA builds the dashboard as code, proves every tile's query runs, delivers it through
+    the project bundle, publishes and schedules it, and certifies it once the business owner signs off.
+spec:
+  prerequisites: [G2, G3]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: dashboard.json, kind: artefact}
+    - {name: tile_results.json, kind: artefact}
+    - {name: dashboard, kind: workspace}
+  validation:
+    - {id: dashboard_exists, check: missing_dashboard, expect: "== 0", severity: mandatory, checklist: AR-2.1,
+       description: The dashboard exists where MAYA delivered it}
+    - {id: dashboard_as_approved, check: dashboard_differences, expect: "== 0", severity: mandatory, checklist: AR-2.1,
+       description: Datasets, pages, tiles and filters of the dashboard are exactly the approved ones}
+    - {id: metric_views_only, check: non_metric_view_datasets, expect: "== 0", severity: mandatory, checklist: AR-2.1,
+       description: Every dataset of the dashboard is a metric view; none is a table or an SQL query}
+    - {id: tiles_use_measures, check: tiles_without_measures, expect: "== 0", severity: mandatory, checklist: AR-2.1,
+       description: Every tile shows at least one metric view measure and groups only by the view's dimensions}
+    - {id: tiles_run, check: failing_tiles, expect: "== 0", severity: mandatory, checklist: AR-2.1,
+       description: The query behind every tile runs on the warehouse}
+    - {id: pages_follow_semantic_pages, check: page_mismatches, expect: "== 0", severity: mandatory, checklist: AR-2.2,
+       description: One dashboard page per page of the semantic model, named the same way, and no other pages}
+    - {id: content_as_declared, check: content_gaps, expect: "== 0", severity: mandatory, checklist: AR-2.2,
+       description: Every KPI and filter the customer declared for a page is on that page}
+    - {id: published, check: unpublished, expect: "== 0", severity: mandatory, checklist: AR-2.3,
+       description: The latest version is published, with the declared credential mode}
+    - {id: schedule_as_declared, check: schedule_differences, expect: "== 0", severity: mandatory, checklist: AR-2.3,
+       description: The refresh schedule and its subscribers are exactly as declared}
+    - {id: access_granted, check: missing_access, expect: "== 0", severity: mandatory, checklist: AR-2.3,
+       description: Every declared group or service principal holds its permission on the dashboard}
+    - {id: distribution_set, check: distribution_gaps, expect: ">= 0", severity: advisory, checklist: AR-2.3,
+       description: No refresh schedule or no subscribers declared (informational)}
+    - {id: tiles_with_data, check: empty_tiles, expect: ">= 0", severity: advisory, checklist: AR-2.1,
+       description: Tiles whose query returns no rows (informational)}
+  certification:
+    approvers: [business_owner]
+    valid_days: 90

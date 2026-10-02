@@ -1,0 +1,26 @@
+# G6 AI/BI dashboards: what each page of the dashboard must show, per page of the semantic model (G3).
+# Written by the business owner. Pages are keyed by page id or page name; pages not listed here are drafted by MAYA's
+# bi_author agent from the metric views alone. The business owner reviews the whole dashboard before it is published.
+#   audience  who uses the page
+#   kpis      measures the page must show: <metric view>.<measure>, or a measure name only one metric view has
+#   filters   dimensions the page must be filterable by
+#   notes     anything else the page should show, in plain language
+pages:
+  sales_performance:
+    audience: Sales leadership and regional sales managers
+    kpis: [sales_performance.revenue, sales_performance.orders, sales_performance.avg_order_value]
+    filters: [region, category]
+    notes: Revenue trend by month, and which regions and product categories drive revenue.
+  order_fulfilment:
+    audience: Supply chain and fulfilment managers
+    kpis: [fulfilment.fill_rate, fulfilment.units_shipped]
+    filters: [region]
+    notes: Fill rate trend by month and the products and regions with the lowest fill rate.
+  returns_overview:
+    audience: Customer service
+    kpis: [returns.returns, returns.returned_value]
+    filters: [reason]
+  customer_purchasing:
+    audience: Account management
+    kpis: [customer_orders.active_customers]
+    filters: [segment]

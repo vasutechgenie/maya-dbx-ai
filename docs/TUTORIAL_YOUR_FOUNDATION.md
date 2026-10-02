@@ -9,8 +9,8 @@ If you want to try MAYA first on synthetic data, do the [example tutorial](TUTOR
 foundation and runs the same goals; this tutorial does not repeat its explanations of each check, so keep it at hand
 as a reference.
 
-The AI Enabled goals G0 to G4 are available now, and so is the first AI Ready goal, G5 Genie space (section 17).
-G6 to G12 will be released later.
+The AI Enabled goals G0 to G4 are available now, and so are the AI Ready goals G5 Genie space (section 17) and G6
+AI/BI dashboards (section 18). G7 to G12 will be released later.
 
 Contents
 
@@ -31,6 +31,7 @@ Contents
 15. [Rolling out to more data products](#15-rolling-out-to-more-data-products)
 16. [Common situations on real foundations](#16-common-situations-on-real-foundations)
 17. [Next: G5 Genie space on your data product](#17-next-g5-genie-space-on-your-data-product)
+18. [Next: G6 AI/BI dashboards on your data product](#18-next-g6-aibi-dashboards-on-your-data-product)
 
 ---
 
@@ -838,3 +839,28 @@ Once AI Enabled is reached, G5 builds a Genie space over your metric views and G
 
 Commit `genie/`, `maya.yaml` and `bundle/` as for the other goals; CI/CD deploys the same space to test and production
 (`bundle/scripts/G5/10_space/genie_space.json`, with catalogs replaced per target).
+
+---
+
+## 18. Next: G6 AI/BI dashboards on your data product
+
+G6 builds one AI/BI dashboard over your metric views, with one page per page of your semantic model. The example
+tutorial ([section 18.2](TUTORIAL.md#182-g6-aibi-dashboards)) explains every step and check. On your own data:
+
+1. **Ask the business owner what each page is for.** For the pages that matter most, write down who uses the page,
+   the KPIs it must show (as `<metric view>.<measure>`) and the filters it needs, in `dashboards/pages.yaml`. Pages
+   you do not list are drafted from the metric views alone, which is a good first draft to review.
+2. **Decide the distribution** with the data product owner: `credentials: viewer` when viewers must see only their
+   own data (G4's masks and row filters apply), `embedded` when everyone may see the same numbers; the refresh
+   schedule as a Quartz cron expression; and the subscribers (workspace users, or notification destination ids for
+   an email list, Slack or Teams).
+3. **Add the `goals.G6` block** to `maya.yaml`: title, content file, credentials, schedule, subscribers and the
+   groups that may open the dashboard.
+4. **Run it**: `maya validate`, then `maya run --goal G6`. The business owner reviews `dashboard.json` (every page
+   and tile) before it is deployed, and the tile results, with the dashboard link, before it is certified.
+5. **Iterate on the content, not the dashboard.** If a page needs a different KPI or filter, change
+   `dashboards/pages.yaml` and run G6 again; only changed pages are re-drafted. A measure missing from every page is
+   usually missing from G2: add it to the metric view definitions first.
+
+Commit `dashboards/`, `maya.yaml` and `bundle/`; CI/CD deploys the same dashboard to test and production
+(`bundle/scripts/G6/10_dashboard/dashboard.json`, with catalogs replaced per target).

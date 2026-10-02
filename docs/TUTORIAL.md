@@ -4,11 +4,11 @@ MAYA makes a data foundation **AI Enabled** (milestone 1: goals G0 to G4) and th
 goals G5 to G12). This tutorial takes you from an empty checkout to the AI Enabled milestone: a data product with
 certified metadata, metric views, a semantic model and governed access, one goal at a time. It uses the
 `commercial_analytics` example, which ships with a synthetic foundation you deploy yourself, so you can follow every
-step on any Unity Catalog workspace. Section 18 then takes the example on to the first AI Ready goal, G5 Genie
-space, and the last parts show how to point MAYA at your own foundation.
+step on any Unity Catalog workspace. Section 18 then takes the example on to the AI Ready goals G5 Genie
+space, and G6 AI/BI dashboards; the last parts show how to point MAYA at your own foundation.
 
-The AI Enabled goals G0 to G4 and the first AI Ready goal, G5 Genie space, are available now. G6 to G12 will be
-released later.
+The AI Enabled goals G0 to G4 and the AI Ready goals G5 Genie space and G6 AI/BI dashboards are available now. G7
+to G12 will be released later.
 
 > **Bringing your own foundation?** Do this tutorial once to learn MAYA, then follow
 > [Take your own data foundation to AI Enabled](TUTORIAL_YOUR_FOUNDATION.md), which walks through the same goals with
@@ -35,7 +35,7 @@ Contents
 15. [Certification options: automatic, manual, self-certified](#15-certification-options-automatic-manual-self-certified)
 16. [The Asset Bundle and CI/CD](#16-the-asset-bundle-and-cicd)
 17. [Using MAYA on your own foundation](#17-using-maya-on-your-own-foundation)
-18. [AI Ready: G5 Genie space and the goals to come](#18-ai-ready-g5-genie-space-and-the-goals-to-come)
+18. [AI Ready: G5 Genie space, G6 dashboards and the goals to come](#18-ai-ready-g5-genie-space-g6-dashboards-and-the-goals-to-come)
 19. [Command reference](#19-command-reference)
 20. [Troubleshooting](#20-troubleshooting)
 21. [Cleaning up](#21-cleaning-up)
@@ -51,7 +51,7 @@ items to the AI Ready goals.
 | Milestone | Goals | Reached when | What it means | Release |
 |-----------|-------|--------------|---------------|---------|
 | **1 · AI Enabled** | G0 Foundation intake, G1 Metadata, G2 Metric views, G3 Semantic model, G4 Governance and access | G0 to G4 are certified | The foundation is described, measured, modelled and governed: an AI system can find, understand and safely use the data | Available now |
-| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 available now; G6 to G12 released later |
+| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 and G6 available now; G7 to G12 released later |
 
 Every AI Ready goal also requires the AI Enabled milestone, so you finish G0 to G4 first.
 
@@ -85,7 +85,8 @@ flowchart LR
 ```
 
 Sections 8 to 12 walk through the five AI Enabled goals in order; at the end of section 12 the example reaches AI
-Enabled. Section 18 runs G5 Genie space, the first AI Ready goal, and describes the goals still to come.
+Enabled. Section 18 runs the AI Ready goals G5 Genie space and G6 AI/BI dashboards, and describes the goals still
+to come.
 
 ---
 
@@ -113,7 +114,7 @@ sensitivity tag". Each goal has:
 | AI Enabled | G2 | Metric views | G1 | Every KPI as a Unity Catalog metric view, each measure proven against an independent reference SQL |
 | AI Enabled | G3 | Semantic model | G1, G2 | Domain > subdomain > page taxonomy, tags on every asset, ontology registry, business glossary, `ontology_lookup()` |
 | AI Enabled | G4 | Governance and access | G1, G2 | Roles and grants, ABAC policies and column masks over sensitive columns, row filters, an audit view |
-| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 now, G6 to G12 later (section 18) |
+| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 and G6 now, G7 to G12 later (section 18) |
 
 **Milestone.** Each goal's `goal.yaml` names its milestone (`metadata.milestone`). `maya status` reports a milestone
 as reached when all its goals are certified.
@@ -1083,11 +1084,11 @@ Several projects can share one workspace; each has its own state schema and dash
 
 ---
 
-## 18. AI Ready: G5 Genie space and the goals to come
+## 18. AI Ready: G5 Genie space, G6 dashboards and the goals to come
 
 AI Ready is milestone 2. It builds on AI Enabled so that people and agents can use the data product. Every AI Ready
-goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space is available now; G6 to G12 will
-be released later.
+goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space and G6 AI/BI dashboards are
+available now; G7 to G12 will be released later.
 
 ### 18.1 G5 Genie space
 
@@ -1234,16 +1235,142 @@ values exactly as G4 defines them. `maya status` now shows G5:
   G5   Genie space                        certified          checks 11/11  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (6 of 13 goals certified; G6 to G12 not released yet)
+  milestone AI Ready: not yet (6 of 13 goals certified; G7 to G12 not released yet)
 ```
 
-AI Ready stays "not yet" until G6 to G12 are released and certified.
+AI Ready stays "not yet" until G6 to G12 are certified.
 
-### 18.2 The goals to come
+### 18.2 G6 AI/BI dashboards
+
+*Milestone 2 · AI Ready, step 2 of 8.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g06_dashboards](../maya/goals/g06_dashboards/README.md).
+
+**What it does.** G6 delivers one AI/BI dashboard with one page (tab) per page of the semantic model (G3), named the
+same way. Every dataset of the dashboard is a certified metric view (G2) and every tile shows a metric view measure,
+so a number on the dashboard is the same number Genie and every other consumer get. Each page has:
+
+- a header with the page's description and audience;
+- filters on the dimensions the page is about (a date dimension becomes a date range filter);
+- counters for the headline KPIs, then trends over months, breakdowns by dimension and detail tables.
+
+The `bi_author` agent drafts the tiles of each page from the metric view measures. A page without a metric view of
+its own (in the example, the reference pages for products and regions) gets the measures that fit its subject, such
+as revenue and fill rate by region. MAYA then proves every tile's query runs, adds any KPI or filter the customer
+required and the agent left out, and lays the page out on the dashboard grid. Measure formats from G2 (currency,
+percentage) carry through to the tiles.
+
+**Inputs.** A page content file written by the business owner, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G6:
+    title: Commercial analytics dashboard
+    content: dashboards/pages.yaml         # audience, KPIs and filters each page must show
+    credentials: viewer                    # viewers see data with their own access, so G4's masks apply
+    schedule: {cron: "0 0 7 * * ?", timezone: UTC}   # refresh daily at 07:00
+    subscribers:
+      - {user: "${env:MAYA_APPROVER}"}
+    access:
+      - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+```
+
+`dashboards/pages.yaml` lists, per page (by id or name), who uses it and what it must show. Pages not listed are
+drafted from the metric views alone:
+
+```yaml
+pages:
+  sales_performance:
+    audience: Sales leadership and regional sales managers
+    kpis: [sales_performance.revenue, sales_performance.orders, sales_performance.avg_order_value]
+    filters: [region, category]
+    notes: Revenue trend by month, and which regions and product categories drive revenue.
+```
+
+A KPI is `<metric view>.<measure>`, or a measure name only one metric view has. `credentials: embedded` shows every
+viewer the data with the publisher's access; `viewer` uses each viewer's own access, so masks and row filters from G4
+apply. Optional settings: `metric_views` (limit the views the dashboard may use), `max_tiles_per_page` (8) and
+`parent_path` (the workspace folder, `MAYA` under your home folder by default).
+
+**Run it:**
+
+```bash
+maya run --goal G6
+```
+
+```
+Running G6 AI/BI dashboards  run=g6-...
+  [code] load
+     7 pages, 4 metric views; authoring 7 pages
+  [agent] author
+     agent author-0: 26.4s
+     ...
+  [code] assemble
+     dashboard: 7 pages, 55 tiles on 4 metric views
+  [gate] review
+  [code] apply
+     deployed via bundle: 1 scripts, 1 statements (job run ...)
+     apply: dashboard 'Commercial analytics dashboard'
+  [validator] validate
+     PASS dashboard_exists: observed 0 (expected == 0)
+     ...
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G6 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** reads the semantic pages and the metric views (with their measures, dimensions and formats) and checks
+   the content file: every page exists, every KPI is a measure, every filter a dimension.
+2. **author** runs one `bi_author` agent per page (four at a time). Pages whose inputs did not change since the last
+   certified run reuse that run's layout.
+3. **assemble** runs every tile's query on the warehouse and leaves out tiles that fail, repeat another tile or name
+   a measure or dimension that does not exist. It adds a counter for each required KPI the agent left out, and a
+   chart for each required filter no tile shares. Each change is listed as a finding in `dashboard.json`.
+4. **review** is a gate: the business owner approves `dashboard.json`, the exact dashboard that will be deployed.
+5. **apply** writes `bundle/scripts/G6/10_dashboard/dashboard.json` and deploys the bundle. The job creates the
+   dashboard at `<parent_path>/<title>` or updates it in place, publishes it, makes the refresh schedule and its
+   subscribers exactly as declared, and adds the permissions.
+6. **validate** reads the dashboard back and runs every tile's query again; the results are in `tile_results.json`.
+7. **sign_off** is a second gate: the business owner approves the tile results, with the dashboard link at hand.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `dashboard_exists` | mandatory | The dashboard exists where MAYA delivered it |
+| `dashboard_as_approved` | mandatory | Datasets, pages, tiles and filters are exactly the approved ones |
+| `metric_views_only` | mandatory | Every dataset is a metric view; none is a table or an SQL query |
+| `tiles_use_measures` | mandatory | Every tile shows at least one measure and groups only by the view's dimensions |
+| `tiles_run` | mandatory | The query behind every tile runs on the warehouse |
+| `pages_follow_semantic_pages` | mandatory | One dashboard page per semantic page, named the same way, and no others |
+| `content_as_declared` | mandatory | Every KPI and filter in the content file is on its page |
+| `published` | mandatory | The latest version is published, with the declared credential mode |
+| `schedule_as_declared` | mandatory | The refresh schedule and its subscribers are exactly as declared |
+| `access_granted` | mandatory | Every declared group holds its permission on the dashboard |
+| `distribution_set` | advisory | No schedule or no subscribers declared |
+| `tiles_with_data` | advisory | Tiles whose query returns no rows |
+
+**See the result.** Open **Dashboards** in the workspace and select *Commercial analytics dashboard* (in the `MAYA`
+folder under your home folder), or follow the `url` in `tile_results.json`. Each tab is a page of the semantic model.
+The schedule (07:00 UTC daily, subscriber: the approver) is under **Schedule** on the dashboard. `maya status` now shows:
+
+```
+  G6   AI/BI dashboards                   certified          checks 12/12  certified by ...
+
+  milestone AI Enabled: reached
+  milestone AI Ready: not yet (7 of 13 goals certified; G7 to G12 not released yet)
+```
+
+Edits made to the dashboard in the UI are drift: the next `maya status` reports G6 stale. To change a page, change
+`dashboards/pages.yaml` (or the metric views in G2) and run G6 again.
+
+### 18.3 The goals to come
 
 | Goal | Outcome | Prerequisites | Certified by | Checklist |
 |------|---------|---------------|--------------|-----------|
-| G6 AI/BI dashboards | One dashboard page per semantic page, built only on metric-view measures, published and scheduled | G2, G3 | Business owner | AR-2.1 to AR-2.3 |
 | G7 Data quality monitoring | Foundation data quality is visible (DQ dashboard) and alerts fire on critical failures and stale Gold | G1 | Data owner | AR-2.4, AR-7.2 |
 | G8 Agent tools (UC functions) | Reusable business actions as parameterised, self-describing Unity Catalog functions, tested, granted and exposed through managed MCP | G2, G3 | Security | AR-3.1 to AR-3.4 |
 | G9 Operations MCP server | Operational notebooks as parameterised jobs returning JSON, served to agents by an MCP server with OAuth and least privilege | G4, G7 | Security | AR-4.1 to AR-4.4 |
@@ -1251,11 +1378,11 @@ AI Ready stays "not yet" until G6 to G12 are released and certified.
 | G11 Evaluation | Agent and Genie answers verified against SQL truth on the metric views, with a regression job on change | G10 | Business owner | AR-6.1 to AR-6.3 |
 | G12 Operations and documentation | Jobs scheduled with retries and notifications, monitoring, runbooks, a product document and an onboarding page | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
 
-**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G5: a block
+**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G6: a block
 per goal under `goals:` in `maya.yaml`, validated inputs, a graph harness with agents and gates, a validator, delivery
 through the project's Asset Bundle, and automatic or manual certification. What you build for AI Enabled is what they
-use: the metric views (G2) feed dashboards and evaluation, the semantic model (G3) shapes dashboard pages, and the
-governance roles (G4) scope the MCP server and agent tools.
+use: the metric views (G2) feed agent tools and evaluation, and the governance roles (G4) scope the MCP server and
+agent tools.
 
 ---
 

@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: layout.load}
+  author:
+    type: agent
+    agent: bi_author
+    task: draft the tiles and filters of one dashboard page from the metric view measures
+    for_each: load.author_pages
+    input: layout.author_input
+    schema: harness/schemas/page_layout.schema.json
+    output: authoring.json
+    concurrency: 4
+  assemble:   {type: code, run: layout.assemble}
+  review:
+    type: gate
+    approver: business_owner
+    items:
+      dashboard.json: {schema: harness/schemas/gates/dashboard.schema.json, check: gate_checks.dashboard}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: business_owner
+    items:
+      tile_results.json: {schema: harness/schemas/gates/tile_results.schema.json, check: gate_checks.tile_results}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> author -> assemble -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

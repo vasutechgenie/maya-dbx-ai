@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "required": ["marker", "title", "parent_path", "credentials", "datasets", "pages", "access", "subscribers", "findings"],
+  "properties": {
+    "marker": {"type": "string", "pattern": "^maya:"},
+    "title": {"type": "string", "minLength": 3},
+    "parent_path": {"type": "string"},
+    "credentials": {"enum": ["embedded", "viewer"]},
+    "schedule": {"type": ["object", "null"]},
+    "subscribers": {"type": "array"},
+    "access": {"type": "array"},
+    "datasets": {"type": "array", "minItems": 1,
+                 "items": {"type": "object", "required": ["name", "metric_view"],
+                           "properties": {"metric_view": {"type": "string", "pattern": "^[^.]+\\.[^.]+\\.[^.]+$"}}}},
+    "pages": {"type": "array", "minItems": 1,
+              "items": {"type": "object", "required": ["id", "name", "tiles", "filters"],
+                        "properties": {
+                          "tiles": {"type": "array", "minItems": 1,
+                                    "items": {"type": "object", "required": ["kind", "title", "metric_view", "measures", "origin"],
+                                              "properties": {"kind": {"enum": ["counter", "line", "bar", "table"]},
+                                                             "origin": {"enum": ["customer", "agent", "maya"]}}}},
+                          "filters": {"type": "array", "items": {"type": "string"}}}}},
+    "findings": {"type": "array", "items": {"type": "string"}}
+  }
+}
