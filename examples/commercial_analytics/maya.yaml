@@ -138,6 +138,13 @@ goals:
     users:                                 # CAN_QUERY on the endpoint
       - "${env:MAYA_CONSUMER_GROUP}"
       - "${env:MAYA_ENGINEER_GROUP}"
+  G11:                                     # AI Ready: evidence the answers are right, and keep being right
+    questions: eval/questions.yaml         # the business owner's questions with truth SQL on the metric views
+    schema: maya_eval                      # dataset and results tables
+    pass_threshold: 0.9                    # share of questions the agents must answer correctly
+    genie_pass_threshold: 0.8              # and the Genie space
+    regression:                            # the job reruns when a source table of the metric views changes
+      notify: ["${env:MAYA_APPROVER}"]     # and tells these owners when a pass rate drops below its threshold
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

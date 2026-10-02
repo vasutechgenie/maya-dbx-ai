@@ -1,0 +1,46 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G11
+  name: evaluation
+  title: Evaluation
+  milestone: AI Ready
+  description: >
+    Evidence that the AI answers are right, and keep being right. The business owner writes the evaluation dataset:
+    business questions, each with the SQL on the governed metric views that gives the right answer. MAYA runs every
+    truth SQL, shows the measures no question covers and more questions proposed by the eval_designer agent, and the
+    business owner approves. The bundle delivers the dataset and results tables and a regression job that asks the
+    served agents (G10) and the Genie space (G5) every question, has a language model judge each answer against the
+    truth rows, records the results in Unity Catalog and MLflow, runs again whenever a source table changes, and fails
+    with a notification when a pass rate drops below its threshold. MAYA runs it once and certifies on its results.
+spec:
+  prerequisites: [G10]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: eval_plan.json, kind: artefact}
+    - {name: eval_results.json, kind: artefact}
+    - {name: evaluation_tables, kind: workspace}
+    - {name: regression_job, kind: workspace}
+  validation:
+    - {id: dataset_ready, check: dataset_gaps, expect: "== 0", severity: mandatory, checklist: AR-6.1,
+       description: Enough business questions, each with truth SQL that runs on the governed metric views, stored in Unity Catalog at the approved version}
+    - {id: agents_accurate, check: agent_shortfall, expect: "== 0", severity: mandatory, checklist: AR-6.2,
+       description: The served agents answer at least the pass threshold of the questions correctly}
+    - {id: genie_accurate, check: genie_shortfall, expect: "== 0", severity: mandatory, checklist: AR-6.2,
+       description: The Genie space answers at least its pass threshold of the questions correctly}
+    - {id: evaluated_current, check: evaluated_other_version, expect: "== 0", severity: mandatory, checklist: AR-6.2,
+       description: The recorded run evaluated the approved dataset against the agents certified now}
+    - {id: regression_armed, check: regression_gaps, expect: "== 0", severity: mandatory, checklist: AR-6.3,
+       description: The regression job reruns the evaluation on change (or on a schedule) and notifies the owners when it fails}
+    - {id: tracked_in_mlflow, check: untracked, expect: ">= 0", severity: advisory, checklist: AR-6.2,
+       description: The evaluation run is in MLflow with its pass rates}
+    - {id: measures_covered, check: uncovered_measures, expect: ">= 0", severity: advisory, checklist: AR-6.1,
+       description: Measures of the metric views that no question asks about (informational)}
+  certification:
+    approvers: [business_owner]
+    valid_days: 90

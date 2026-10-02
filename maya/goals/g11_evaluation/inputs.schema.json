@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["questions"],
+  "properties": {
+    "questions": {"type": "string", "description": "YAML file (relative to maya.yaml) with the evaluation questions; see $defs/questions_file"},
+    "schema": {"type": "string", "default": "maya_eval", "description": "Schema of the dataset and results tables (<catalog>.<schema> or a schema of the first catalog)"},
+    "targets": {"type": "array", "items": {"enum": ["agent", "genie"]}, "minItems": 1, "uniqueItems": true,
+                "default": ["agent", "genie"], "description": "What is evaluated: the served agents (G10), the Genie space (G5)"},
+    "pass_threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.9, "description": "Share of questions the agents must answer correctly"},
+    "genie_pass_threshold": {"type": "number", "minimum": 0, "maximum": 1, "description": "Share for the Genie space (default pass_threshold)"},
+    "min_questions": {"type": "integer", "minimum": 1, "default": 20},
+    "max_suggestions": {"type": "integer", "minimum": 0, "maximum": 20, "default": 5, "description": "More questions the eval_designer proposes (never scored); 0 skips it"},
+    "judge_endpoint": {"type": "string", "default": "databricks-claude-sonnet-4-6", "description": "Model Serving endpoint of the language model that judges answers"},
+    "regression": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "on_change": {"type": "boolean", "default": true, "description": "Rerun when a source table of the metric views changes"},
+        "schedule": {"type": ["string", "null"], "description": "Quartz cron; replaces the trigger on change"},
+        "timezone": {"type": "string", "default": "UTC"},
+        "notify": {"type": "array", "items": {"type": "string"}, "description": "Emails notified when the evaluation fails"}
+      }
+    },
+    "model": {"type": "string", "description": "Model of the eval_designer agent (default: the harness model)"}
+  },
+  "$defs": {
+    "questions_file": {
+      "type": "object", "additionalProperties": false, "required": ["questions"],
+      "properties": {
+        "questions": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/question"}}
+      }
+    },
+    "question": {
+      "type": "object", "additionalProperties": false, "required": ["question", "sql"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
+        "question": {"type": "string", "minLength": 10},
+        "sql": {"type": "string", "minLength": 10, "description": "SQL on the metric views giving the right answer (at most 50 rows)"},
+        "targets": {"type": "array", "items": {"enum": ["agent", "genie"]}, "description": "Default: every target"},
+        "tags": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

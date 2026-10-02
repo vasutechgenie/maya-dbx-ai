@@ -1,0 +1,140 @@
+# G11 evaluation dataset: business questions with the SQL that gives the right answer.
+# Written and owned by the business owner. The agents (G10) and the Genie space (G5) must answer at least
+# goals.G11.pass_threshold of them correctly; a language model judges each answer against the rows of the SQL.
+# Name the period in every question, and keep answers short (at most 50 rows).
+questions:
+  - question: What was total revenue in June 2026?
+    tags: [revenue]
+    sql: |
+      SELECT MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-06-01' AND DATE'2026-06-30'
+
+  - question: What was revenue by region in July 2026?
+    tags: [revenue, region]
+    sql: |
+      SELECT region, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31' GROUP BY region
+
+  - question: Which region had the highest revenue in August 2026, and how much?
+    tags: [revenue, region, top]
+    sql: |
+      SELECT region, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31' GROUP BY region ORDER BY revenue DESC LIMIT 1
+
+  - question: What was the revenue of Compute Pro per month from June to September 2026?
+    tags: [revenue, product, trend]
+    sql: |
+      SELECT order_month, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE product = 'Compute Pro' AND order_date BETWEEN DATE'2026-06-01' AND DATE'2026-09-30'
+      GROUP BY order_month ORDER BY order_month
+
+  - question: What was revenue by product category in the third quarter of 2026?
+    tags: [revenue, category]
+    sql: |
+      SELECT category, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30' GROUP BY category
+
+  - question: How many units of Security products were sold in September 2026?
+    tags: [units, category]
+    sql: |
+      SELECT MEASURE(units) AS units FROM solution_builder.maya_metrics.sales_performance
+      WHERE category = 'Security' AND order_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+
+  - question: How many orders were placed in Europe North in August 2026?
+    tags: [orders, region]
+    sql: |
+      SELECT MEASURE(orders) AS orders FROM solution_builder.maya_metrics.sales_performance
+      WHERE region = 'Europe North' AND order_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31'
+
+  - question: What was the average order value in Asia Pacific in July 2026?
+    tags: [avg_order_value, region]
+    sql: |
+      SELECT MEASURE(avg_order_value) AS avg_order_value FROM solution_builder.maya_metrics.sales_performance
+      WHERE region = 'Asia Pacific' AND order_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31'
+
+  - question: What were the top 3 products by revenue in the third quarter of 2026?
+    tags: [revenue, product, top]
+    sql: |
+      SELECT product, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30' GROUP BY product ORDER BY revenue DESC LIMIT 3
+
+  - question: How did total revenue in September 2026 compare with August 2026?
+    tags: [revenue, comparison]
+    sql: |
+      SELECT order_month, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-08-01' AND DATE'2026-09-30' GROUP BY order_month ORDER BY order_month
+
+  - question: What was the fill rate by region in July 2026?
+    tags: [fill_rate, region]
+    sql: |
+      SELECT region, MEASURE(fill_rate) AS fill_rate FROM solution_builder.maya_metrics.fulfilment
+      WHERE ship_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31' GROUP BY region
+
+  - question: Which region had the lowest fill rate in the third quarter of 2026?
+    tags: [fill_rate, region, top]
+    sql: |
+      SELECT region, MEASURE(fill_rate) AS fill_rate FROM solution_builder.maya_metrics.fulfilment
+      WHERE ship_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30' GROUP BY region ORDER BY fill_rate ASC LIMIT 1
+
+  - question: How many units were ordered and how many shipped in August 2026?
+    tags: [units_ordered, units_shipped]
+    sql: |
+      SELECT MEASURE(units_ordered) AS units_ordered, MEASURE(units_shipped) AS units_shipped
+      FROM solution_builder.maya_metrics.fulfilment WHERE ship_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31'
+
+  - question: What was the overall fill rate in the third quarter of 2026?
+    tags: [fill_rate]
+    sql: |
+      SELECT MEASURE(fill_rate) AS fill_rate FROM solution_builder.maya_metrics.fulfilment
+      WHERE ship_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30'
+
+  - question: How many returns were there by reason in August 2026?
+    tags: [returns, reason]
+    sql: |
+      SELECT reason, MEASURE(returns) AS returns FROM solution_builder.maya_metrics.returns
+      WHERE return_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31' GROUP BY reason
+
+  - question: What was the most common return reason in Latin America in the third quarter of 2026?
+    tags: [returns, reason, region, top]
+    sql: |
+      SELECT reason, MEASURE(returns) AS returns FROM solution_builder.maya_metrics.returns
+      WHERE region = 'Latin America' AND return_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30'
+      GROUP BY reason ORDER BY returns DESC LIMIT 1
+
+  - question: What was the total value of returned goods in September 2026?
+    tags: [returned_value]
+    sql: |
+      SELECT MEASURE(returned_value) AS returned_value FROM solution_builder.maya_metrics.returns
+      WHERE return_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+
+  - question: How many units were returned because they were damaged in July 2026?
+    tags: [units_returned, reason]
+    sql: |
+      SELECT MEASURE(units_returned) AS units_returned FROM solution_builder.maya_metrics.returns
+      WHERE reason = 'damaged' AND return_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31'
+
+  - question: How many active customers did each customer segment have in August 2026?
+    tags: [active_customers, segment]
+    sql: |
+      SELECT segment, MEASURE(active_customers) AS active_customers FROM solution_builder.maya_metrics.customer_orders
+      WHERE order_month = TIMESTAMP'2026-08-01' GROUP BY segment
+
+  - question: Which customer segment brought the most revenue in September 2026, and how much?
+    tags: [revenue, segment, top]
+    sql: |
+      SELECT segment, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.customer_orders
+      WHERE order_month = TIMESTAMP'2026-09-01' GROUP BY segment ORDER BY revenue DESC LIMIT 1
+
+  - question: What was Enterprise segment revenue per month from June to September 2026?
+    tags: [revenue, segment, trend]
+    sql: |
+      SELECT order_month, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.customer_orders
+      WHERE segment = 'Enterprise' AND order_month BETWEEN TIMESTAMP'2026-06-01' AND TIMESTAMP'2026-09-01'
+      GROUP BY order_month ORDER BY order_month
+
+  - question: What was the revenue of Networking products in North America East in the third quarter of 2026?
+    tags: [revenue, category, region]
+    sql: |
+      SELECT MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE category = 'Networking' AND region = 'North America East'
+        AND order_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30'

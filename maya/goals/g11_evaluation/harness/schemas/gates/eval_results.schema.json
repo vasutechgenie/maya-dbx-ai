@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["eval_run_id", "summary", "results"],
+  "properties": {
+    "eval_run_id": {"type": ["string", "null"]},
+    "summary": {"type": "object"},
+    "results": {"type": "array", "items": {"type": "object", "required": ["target", "question", "correct"]}}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["suggestions"],
+  "properties": {
+    "suggestions": {
+      "type": "array", "maxItems": 20,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["question", "sql", "why"],
+        "properties": {
+          "question": {"type": "string", "minLength": 10},
+          "sql": {"type": "string", "minLength": 10},
+          "why": {"type": "string"}
+        }
+      }
+    }
+  }
+}

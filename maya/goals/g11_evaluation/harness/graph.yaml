@@ -1,0 +1,32 @@
+nodes:
+  load:       {type: code, run: dataset.load}
+  design:
+    type: agent
+    agent: eval_designer
+    task: propose evaluation questions with truth SQL for what the dataset does not cover
+    for_each: load.dataset
+    input: dataset.designer_input
+    schema: harness/schemas/suggestions.schema.json
+    output: suggestions.json
+  plan:       {type: code, run: dataset.plan}
+  review:
+    type: gate
+    approver: business_owner
+    items:
+      eval_plan.json: {schema: harness/schemas/gates/eval_plan.schema.json, check: gate_checks.eval_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: business_owner
+    items:
+      eval_results.json: {schema: harness/schemas/gates/eval_results.schema.json, check: gate_checks.eval_results}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> design -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify
