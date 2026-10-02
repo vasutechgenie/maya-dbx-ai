@@ -3,7 +3,10 @@
 Scripts name catalogs with tokens ({{catalog:<name in dev>}}) so the same files deploy to any environment: each
 token is replaced by the value passed with --catalog <name in dev>=<name here> (the bundle passes its variables).
 A file holds statements separated by '-- @statement' lines; a statement may be a SQL scripting block (BEGIN ... END).
-A .json file declares workspace objects SQL cannot create: {"tag_policies": [{"tag_key", "description", "values"}]}
+A .json file declares workspace objects SQL cannot create (catalog tokens are replaced in it too):
+{"tag_policies": [{"tag_key", "description", "values"}]} and
+{"genie_spaces": [{"marker", "title", "description", "parent_path", "serialized_space", "permissions"}]}: each space is
+found by the marker in its description, then updated in place or created; permissions are added, never removed
 creates each governed tag or sets it to exactly the declared description and allowed values.
 Every statement is idempotent, so a file can be re-run.
 
@@ -77,8 +80,49 @@ def tag_policy(client, p):
     client.api_client.do("PATCH", f"{path}/{p['tag_key']}", query={"update_mask": "description,values"}, body=body)
 
 
-def run_json(client, rel, doc, dry_run):
+def find_space(client, marker):
+    token = None
+    while True:
+        r = client.api_client.do("GET", "/api/2.0/genie/spaces", query={"page_size": 100, **({"page_token": token} if token else {})})
+        for sp in r.get("spaces") or []:
+            if marker in (sp.get("description") or ""):
+                return sp["space_id"]
+        token = r.get("next_page_token")
+        if not token:
+            return None
+
+
+def genie_space(client, warehouse_id, sp):
+    parent = sp.get("parent_path") or "MAYA"
+    if not parent.startswith("/"):
+        parent = f"/Workspace/Users/{client.current_user.me().user_name}/{parent}"
+    body = {"title": sp["title"], "description": f"{(sp.get('description') or '').rstrip()}\n\n{sp['marker']}".lstrip(),
+            "serialized_space": json.dumps(sp["serialized_space"]), "warehouse_id": sp.get("warehouse_id") or warehouse_id}
+    sid = find_space(client, sp["marker"])
+    if sid:
+        client.api_client.do("PATCH", f"/api/2.0/genie/spaces/{sid}", body=body)
+    else:
+        client.workspace.mkdirs(parent)
+        sid = client.api_client.do("POST", "/api/2.0/genie/spaces", body={**body, "parent_path": parent})["space_id"]
+    acl = [{("group_name" if p.get("group") else "service_principal_name"): p.get("group") or p["service_principal"],
+            "permission_level": p.get("level", "CAN_RUN")} for p in sp.get("permissions") or []]
+    if acl:
+        client.api_client.do("PATCH", f"/api/2.0/permissions/genie/{sid}", body={"access_control_list": acl})
+    return sid
+
+
+def run_json(client, warehouse_id, rel, doc, dry_run):
     n = 0
+    for i, sp in enumerate(doc.get("genie_spaces") or []):
+        if dry_run:
+            print(f"-- {rel} #{i + 1}: Genie space {sp['title']!r} ({sp['marker']}), "
+                  f"{len(sp['serialized_space'].get('data_sources', {}).get('tables', []))} sources\n")
+            continue
+        try:
+            print(f"   Genie space {sp['title']!r}: {genie_space(client, warehouse_id, sp)}")
+        except Exception as e:
+            return n, {"failed": rel, "statement": i + 1, "error": str(e)[:2000], "sql": sp["title"]}
+        n += 1
     for i, p in enumerate(doc.get("tag_policies") or []):
         if dry_run:
             print(f"-- {rel} #{i + 1}: tag policy {p['tag_key']} values {p.get('values')}\n")
@@ -95,7 +139,11 @@ def run_file(client, warehouse_id, root, f, catalogs, dry_run):
     """Statements of one file, in order. Returns (statements run, failure or None)."""
     rel = str(f.relative_to(root))
     if f.suffix == ".json":
-        return run_json(client, rel, json.loads(f.read_text()), dry_run)
+        try:
+            doc = json.loads(substitute(f.read_text(), catalogs))
+        except KeyError as e:
+            return 0, {"failed": rel, "statement": 0, "error": str(e), "sql": ""}
+        return run_json(client, warehouse_id, rel, doc, dry_run)
     n = 0
     for i, s in enumerate(statements(f.read_text())):
         sql = substitute(s, catalogs)

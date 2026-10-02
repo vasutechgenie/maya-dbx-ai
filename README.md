@@ -1,7 +1,8 @@
 # MAYA Databricks AI Accelerator
 
 A goal engine that takes an existing Bronze/Silver/Gold data foundation and makes it **AI Enabled** (milestone 1,
-goals G0 to G4, available now) and then **AI Ready** (milestone 2, goals G5 to G12, to be released later).
+goals G0 to G4, available now) and then **AI Ready** (milestone 2, goals G5 to G12; G5 is available now, G6 to G12
+will be released later).
 Each goal is declared in YAML, runs as a graph harness (deterministic steps, agents, validated gates), is checked
 by its own validator and is certified. Every deliverable is a script delivered through the project's Databricks
 Asset Bundle; promotion between environments is left to your CI/CD.
@@ -57,14 +58,14 @@ The data foundation is described, measured, modelled and governed. **AI Enabled 
 `maya status` reports the milestone (`milestone AI Enabled: reached`) once G0 to G4 are certified. Each goal's
 page shows its architecture: inputs, harness graph, outputs and checks.
 
-### Milestone 2 · AI Ready (G5 to G12 will be released later)
+### Milestone 2 · AI Ready (G5 available now; G6 to G12 will be released later)
 
 On top of AI Enabled, the data product is usable by people and agents. **AI Ready = AI Enabled plus G5 to G12
 certified.** Every AI Ready goal also requires AI Enabled.
 
 | Goal | Outcome | Prerequisites | Certified by | Checklist |
 |------|---------|---------------|--------------|-----------|
-| G5 Genie space | A Genie space over metric views and Gold that answers business questions correctly. | G2, G3 | Business owner | AR-1.1 to AR-1.4 |
+| [G5 Genie space](maya/goals/g05_genie_space/README.md) | A Genie space over metric views and Gold that answers business questions correctly. | G2, G3 | Business owner | AR-1.1 to AR-1.4 |
 | G6 AI/BI dashboards | One dashboard page per semantic page, built only on metric views, published and scheduled. | G2, G3 | Business owner | AR-2.1 to AR-2.3 |
 | G7 Data quality monitoring | Foundation data quality is visible and alerts fire on failures. | G1 | Data owner | AR-2.4, AR-7.2 |
 | G8 Agent tools (UC functions) | Reusable business actions as self-describing Unity Catalog functions agents can call. | G2, G3 | Security | AR-3.1 to AR-3.4 |
@@ -73,7 +74,8 @@ certified.** Every AI Ready goal also requires AI Enabled.
 | G11 Evaluation | Agent and Genie answers verified against SQL truth, with regression on change. | G10 | Business owner | AR-6.1 to AR-6.3 |
 | G12 Operations and documentation | The system is operable and documented for its consumers. | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
 
-These goals are not in this release; they will be released later.
+G6 to G12 are not in this release; they will be released later. Until they are, `maya status` reports
+`milestone AI Ready: not yet` and names the goals still to be released.
 
 ## How it works
 
@@ -158,7 +160,7 @@ Other commands: `plan`, `review`, `bundle`, `migrate`, `projects`, `portfolio` (
 | Document | For |
 |----------|-----|
 | [Architecture](docs/ARCHITECTURE.md) | How MAYA works: components, the two levels of graph, a goal run end to end, statuses, delivery through the Asset Bundle and CI/CD, the state model |
-| [Example: from a synthetic foundation to AI Enabled](docs/TUTORIAL.md) | Learning MAYA: deploys a sample foundation and runs G0 to G4 on it, explaining every goal, check and command |
+| [Example: from a synthetic foundation to AI Enabled](docs/TUTORIAL.md) | Learning MAYA: deploys a sample foundation and runs G0 to G5 on it, explaining every goal, check and command |
 | [Your own foundation to AI Enabled](docs/TUTORIAL_YOUR_FOUNDATION.md) | Using MAYA on your data: inventory, `maya.yaml` for your layers, your context, KPIs, taxonomy and access model, then CI/CD |
 
 ## Layout
@@ -168,7 +170,7 @@ Other commands: `plan`, `review`, `bundle`, `migrate`, `projects`, `portfolio` (
   and a `README.md` with the goal's architecture diagram
 - `maya/bundle`: the script runner deployed with the Asset Bundle
 - `maya/status`: status report and dashboards
-- `examples/`: `commercial_analytics` (G0 to G4) and `supply_chain`
+- `examples/`: `commercial_analytics` (G0 to G5) and `supply_chain`
 
 Workspace-specific values (profile, warehouse, approver, groups) come from environment variables referenced as
 `${env:NAME}` in `maya.yaml`. The examples use the catalog `solution_builder`; change `foundation.catalog`,

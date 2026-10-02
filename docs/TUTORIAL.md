@@ -4,10 +4,11 @@ MAYA makes a data foundation **AI Enabled** (milestone 1: goals G0 to G4) and th
 goals G5 to G12). This tutorial takes you from an empty checkout to the AI Enabled milestone: a data product with
 certified metadata, metric views, a semantic model and governed access, one goal at a time. It uses the
 `commercial_analytics` example, which ships with a synthetic foundation you deploy yourself, so you can follow every
-step on any Unity Catalog workspace. The last parts show what AI Ready adds and how to point MAYA at your own
-foundation.
+step on any Unity Catalog workspace. Section 18 then takes the example on to the first AI Ready goal, G5 Genie
+space, and the last parts show how to point MAYA at your own foundation.
 
-The AI Enabled goals G0 to G4 are available now. The AI Ready goals G5 to G12 will be released later.
+The AI Enabled goals G0 to G4 and the first AI Ready goal, G5 Genie space, are available now. G6 to G12 will be
+released later.
 
 > **Bringing your own foundation?** Do this tutorial once to learn MAYA, then follow
 > [Take your own data foundation to AI Enabled](TUTORIAL_YOUR_FOUNDATION.md), which walks through the same goals with
@@ -34,7 +35,7 @@ Contents
 15. [Certification options: automatic, manual, self-certified](#15-certification-options-automatic-manual-self-certified)
 16. [The Asset Bundle and CI/CD](#16-the-asset-bundle-and-cicd)
 17. [Using MAYA on your own foundation](#17-using-maya-on-your-own-foundation)
-18. [What comes next: AI Ready](#18-what-comes-next-ai-ready)
+18. [AI Ready: G5 Genie space and the goals to come](#18-ai-ready-g5-genie-space-and-the-goals-to-come)
 19. [Command reference](#19-command-reference)
 20. [Troubleshooting](#20-troubleshooting)
 21. [Cleaning up](#21-cleaning-up)
@@ -50,7 +51,7 @@ items to the AI Ready goals.
 | Milestone | Goals | Reached when | What it means | Release |
 |-----------|-------|--------------|---------------|---------|
 | **1 · AI Enabled** | G0 Foundation intake, G1 Metadata, G2 Metric views, G3 Semantic model, G4 Governance and access | G0 to G4 are certified | The foundation is described, measured, modelled and governed: an AI system can find, understand and safely use the data | Available now |
-| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | Released later |
+| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 available now; G6 to G12 released later |
 
 Every AI Ready goal also requires the AI Enabled milestone, so you finish G0 to G4 first.
 
@@ -84,7 +85,7 @@ flowchart LR
 ```
 
 Sections 8 to 12 walk through the five AI Enabled goals in order; at the end of section 12 the example reaches AI
-Enabled. Section 18 describes the AI Ready goals.
+Enabled. Section 18 runs G5 Genie space, the first AI Ready goal, and describes the goals still to come.
 
 ---
 
@@ -112,7 +113,7 @@ sensitivity tag". Each goal has:
 | AI Enabled | G2 | Metric views | G1 | Every KPI as a Unity Catalog metric view, each measure proven against an independent reference SQL |
 | AI Enabled | G3 | Semantic model | G1, G2 | Domain > subdomain > page taxonomy, tags on every asset, ontology registry, business glossary, `ontology_lookup()` |
 | AI Enabled | G4 | Governance and access | G1, G2 | Roles and grants, ABAC policies and column masks over sensitive columns, row filters, an audit view |
-| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | Released later (section 18) |
+| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 now, G6 to G12 later (section 18) |
 
 **Milestone.** Each goal's `goal.yaml` names its milestone (`metadata.milestone`). `maya status` reports a milestone
 as reached when all its goals are certified.
@@ -1082,15 +1083,166 @@ Several projects can share one workspace; each has its own state schema and dash
 
 ---
 
-## 18. What comes next: AI Ready
+## 18. AI Ready: G5 Genie space and the goals to come
 
-AI Ready is milestone 2. It builds on AI Enabled so that people and agents can use the data product: every AI Ready
-goal requires the AI Enabled milestone, plus the goals listed below. **G5 to G12 will be released later**; this
-section describes what they will do so you can prepare your inputs.
+AI Ready is milestone 2. It builds on AI Enabled so that people and agents can use the data product. Every AI Ready
+goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space is available now; G6 to G12 will
+be released later.
+
+### 18.1 G5 Genie space
+
+*Milestone 2 · AI Ready, step 1 of 8.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g05_genie_space](../maya/goals/g05_genie_space/README.md).
+
+**What it does.** G5 delivers a Genie space that business users can ask questions in plain language and that answers
+correctly. MAYA builds it from what AI Enabled already certified:
+
+- **Sources**: the metric views (G2) and the Gold tables placed on the semantic model's pages (G3). Bronze and Silver
+  are never added unless you set `allow_silver: true`.
+- **Instructions**: your business rules, then one entry per KPI naming its metric view measure, the glossary and the
+  taxonomy (G3), and one short paragraph of guidance per page.
+- **Sample questions**: yours, per page. The `bi_author` agent adds questions until every page has
+  `min_questions_per_page` (5 by default), written the way users of that page would ask them.
+- **Trusted SQL**: the SQL you attach to a question, and SQL the agent writes for at most two critical questions per
+  page. MAYA runs every statement and keeps only those that run and read only the space's sources.
+- **Benchmarks**: your questions with the SQL that gives the right answer. After deploying, MAYA has Genie answer
+  every benchmark and compares Genie's result with yours. The goal passes only when Genie gets at least
+  `pass_threshold` of them right.
+- **Access**: `CAN_RUN` (or the level you choose) for the groups you list. What those groups can read is decided by
+  G4: Genie answers each user with that user's own permissions, so masks and row filters apply.
+
+**Inputs.** Two files written by the business owner and key users, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G5:
+    title: Commercial analytics
+    description: Ask about sales, customers, fulfilment and returns of the commercial data product.
+    questions: genie/questions.yaml        # business rules and the questions users ask, per semantic page
+    benchmarks: genie/benchmarks.yaml      # 10+ questions with the SQL that gives the right answer
+    pass_threshold: 0.8                    # share of benchmarks Genie must answer correctly
+    access:
+      - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+```
+
+`genie/questions.yaml` holds the rules and the questions per page (by page id or name). A question can carry trusted
+SQL and be marked `critical`:
+
+```yaml
+rules:
+  - Revenue is quantity times unit price for orders that are not cancelled, in USD.
+  - When a question names no period, use the latest full calendar month in the data.
+pages:
+  sales_performance:
+    - question: What was total revenue last month?
+      critical: true
+      sql: |
+        SELECT MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance ...
+    - Which products sold the most units this quarter?
+```
+
+`genie/benchmarks.yaml` holds the benchmarks. Name the period in every benchmark question ("in August 2026", not "last
+month"): Genie's answer and your SQL must mean the same thing, and relative periods drift as time passes.
+
+```yaml
+benchmarks:
+  - question: What was total revenue in August 2026?
+    sql: |
+      SELECT MEASURE(revenue) AS revenue
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31'
+```
+
+Optional settings: `min_questions_per_page` (5), `min_benchmarks` (10), `sources` and `exclude` to change the source
+list, `parent_path` (the workspace folder for the space, `MAYA` under your home folder by default) and
+`benchmark_timeout_minutes`.
+
+**Run it:**
+
+```bash
+maya run --goal G5
+```
+
+```
+Running G5 Genie space  run=g5-...
+  [code] load
+     7 pages, 8 sources, 12 benchmarks; authoring 7 pages
+  [agent] author
+     agent author-0: 31.0s
+     ...
+  [code] assemble
+     space: 8 sources, 35 sample questions, 13 trusted SQL, 12 benchmarks
+  [gate] review
+  [code] apply
+     deployed via bundle: 1 scripts, 1 statements (job run ...)
+     apply: Genie space 'Commercial analytics'
+  [validator] validate
+     PASS space_exists: observed 0 (expected == 0)
+     ...
+     PASS benchmarks_pass: observed 0 (expected == 0)
+     ...
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G5 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** checks both files against the semantic model: every page exists, every customer SQL statement and every
+   benchmark runs, and every statement reads only the space's sources. A failing statement stops the run with the
+   statement and the error named.
+2. **author** runs one `bi_author` agent per page that needs questions (four at a time). Pages whose inputs did not
+   change since the last certified run reuse that run's questions, so a rerun costs no agent time.
+3. **assemble** merges everything into `space.json`: duplicate questions are dropped, agent SQL that fails or reads
+   outside the space is dropped, and guidance that names objects outside the space is dropped. Each drop is listed as
+   a finding.
+4. **review** is a gate: the business owner approves `space.json`, the exact space that will be deployed.
+5. **apply** writes `bundle/scripts/G5/10_space/genie_space.json` and deploys the bundle. The job creates the space,
+   or updates the one it created before (found by a marker in its description), and sets its permissions.
+6. **validate** compares the live space with the approved one, then has Genie answer every benchmark and records the
+   result of each in `benchmark_results.json`.
+7. **sign_off** is a second gate: the business owner approves the benchmark results.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `space_exists` | mandatory | The Genie space exists |
+| `space_as_approved` | mandatory | Sources, instructions, sample questions, trusted SQL and benchmarks are exactly as approved |
+| `curated_sources_only` | mandatory | Every source is a metric view or Gold table (Silver only with `allow_silver`) |
+| `instructions_complete` | mandatory | The instructions carry every rule, every KPI with its measure, and the glossary |
+| `questions_per_page` | mandatory | Every page has at least `min_questions_per_page` sample questions |
+| `benchmarks_defined` | mandatory | At least `min_benchmarks` benchmarks, each with SQL that runs |
+| `benchmarks_pass` | mandatory | Genie answers at least `pass_threshold` of the benchmarks correctly |
+| `trusted_sql_runs` | mandatory | Every trusted SQL statement runs and reads only the space's sources |
+| `access_granted` | mandatory | Every declared group holds its permission on the space |
+| `critical_questions_trusted` | advisory | Critical questions that have no trusted SQL |
+| `benchmark_review` | advisory | Benchmarks Genie's evaluation could not judge automatically |
+
+If `benchmarks_pass` fails, `benchmark_results.json` shows, for each benchmark Genie got wrong, the SQL Genie wrote
+and why it was judged wrong. The usual fixes are a rule in `questions.yaml` ("never average daily fill rates"), a
+trusted SQL statement for that kind of question, or a better description on a metric view measure (G2). Then run G5
+again.
+
+**See the result.** Open **Genie** in the workspace and select *Commercial analytics* (in the `MAYA` folder under your
+home folder). Ask one of the sample questions, or one of your own. As a member of the consumer group you see masked
+values exactly as G4 defines them. `maya status` now shows G5:
+
+```
+  G5   Genie space                        certified          checks 11/11  certified by ...
+
+  milestone AI Enabled: reached
+  milestone AI Ready: not yet (6 of 13 goals certified; G6 to G12 not released yet)
+```
+
+AI Ready stays "not yet" until G6 to G12 are released and certified.
+
+### 18.2 The goals to come
 
 | Goal | Outcome | Prerequisites | Certified by | Checklist |
 |------|---------|---------------|--------------|-----------|
-| G5 Genie space | A Genie space over metric views and Gold that answers business questions correctly: instructions from the semantic model and glossary, sample questions per page, trusted SQL, benchmarks at a pass threshold | G2, G3 | Business owner | AR-1.1 to AR-1.4 |
 | G6 AI/BI dashboards | One dashboard page per semantic page, built only on metric-view measures, published and scheduled | G2, G3 | Business owner | AR-2.1 to AR-2.3 |
 | G7 Data quality monitoring | Foundation data quality is visible (DQ dashboard) and alerts fire on critical failures and stale Gold | G1 | Data owner | AR-2.4, AR-7.2 |
 | G8 Agent tools (UC functions) | Reusable business actions as parameterised, self-describing Unity Catalog functions, tested, granted and exposed through managed MCP | G2, G3 | Security | AR-3.1 to AR-3.4 |
@@ -1099,11 +1251,11 @@ section describes what they will do so you can prepare your inputs.
 | G11 Evaluation | Agent and Genie answers verified against SQL truth on the metric views, with a regression job on change | G10 | Business owner | AR-6.1 to AR-6.3 |
 | G12 Operations and documentation | Jobs scheduled with retries and notifications, monitoring, runbooks, a product document and an onboarding page | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
 
-**AI Ready = AI Enabled plus G5 to G12 certified.** The AI Ready goals will work exactly like the AI Enabled ones: a
-block per goal under `goals:` in `maya.yaml`, validated inputs, a graph harness with agents and gates, a validator,
-delivery through the project's Asset Bundle, and automatic or manual certification. What you build for AI Enabled is
-what they use: the metric views (G2) feed Genie, dashboards and evaluation; the semantic model (G3) shapes the Genie
-instructions and dashboard pages; the governance roles (G4) scope the MCP server and agent tools.
+**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G5: a block
+per goal under `goals:` in `maya.yaml`, validated inputs, a graph harness with agents and gates, a validator, delivery
+through the project's Asset Bundle, and automatic or manual certification. What you build for AI Enabled is what they
+use: the metric views (G2) feed dashboards and evaluation, the semantic model (G3) shapes dashboard pages, and the
+governance roles (G4) scope the MCP server and agent tools.
 
 ---
 

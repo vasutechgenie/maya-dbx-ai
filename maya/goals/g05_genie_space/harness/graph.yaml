@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: space.load}
+  author:
+    type: agent
+    agent: bi_author
+    task: write the Genie guidance and sample questions of one semantic page
+    for_each: load.author_pages
+    input: space.author_input
+    schema: harness/schemas/authoring.schema.json
+    output: authoring.json
+    concurrency: 4
+  assemble:   {type: code, run: space.assemble}
+  review:
+    type: gate
+    approver: business_owner
+    items:
+      space.json: {schema: harness/schemas/gates/space.schema.json, check: gate_checks.space}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: business_owner
+    items:
+      benchmark_results.json: {schema: harness/schemas/gates/benchmark_results.schema.json, check: gate_checks.benchmark_results}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> author -> assemble -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

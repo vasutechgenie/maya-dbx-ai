@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "required": ["space_id", "eval_run_id", "questions", "correct", "needed", "threshold", "results"],
+  "properties": {
+    "space_id": {"type": "string"},
+    "eval_run_id": {"type": "string"},
+    "questions": {"type": "integer", "minimum": 1},
+    "correct": {"type": "integer", "minimum": 0},
+    "needed": {"type": "integer", "minimum": 0},
+    "threshold": {"type": "number"},
+    "results": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["question", "assessment", "expected_sql"],
+                "properties": {"assessment": {"enum": ["GOOD", "BAD", "NEEDS_REVIEW", "UNKNOWN"]},
+                               "reasons": {"type": "array"}, "genie_sql": {"type": ["string", "null"]}}}
+    }
+  }
+}

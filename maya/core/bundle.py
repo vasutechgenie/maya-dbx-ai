@@ -4,6 +4,7 @@
   databricks.yml                        written once; add your own targets here or in CI/CD - MAYA never rewrites it
   resources/maya_variables.yml          one variable per catalog the scripts use (default: the dev name), warehouse_id
   resources/maya_deploy.job.yml         job 'maya_deploy': one task per goal, in goal order
+  resources/maya_sync.yml               uploads maya_deploy/ and scripts/ even where .gitignore excludes them
   maya_deploy/run_scripts.py            standalone runner the tasks execute (databricks-sdk only)
   scripts/<goal>/**.sql                 idempotent SQL; catalogs as {{catalog:<dev name>}} tokens
   scripts/<goal>/**.json                governed tags (tag policies), which SQL cannot create
@@ -94,7 +95,7 @@ def write(ctx, files: dict, catalogs=None, remove=()) -> list[str]:
         p = base / rel
         p.parent.mkdir(parents=True, exist_ok=True)
         if rel.endswith(".json"):
-            text = json.dumps(stmts, indent=1, sort_keys=True) + "\n"
+            text = tokenize(json.dumps(stmts, indent=1, sort_keys=True), cats) + "\n"
         else:
             text = render(f"{ctx.goal.id} {ctx.goal.title}: {rel}", ctx.run_id, stmts, cats)
         if not p.exists() or _body(p.read_text()) != _body(text):
@@ -117,8 +118,9 @@ def undelivered(ctx, rels) -> list[str]:
 
 def _script_catalogs(system) -> list[str]:
     found = set()
-    for p in (root(system) / "scripts").rglob("*.sql"):
-        found |= set(TOKEN.findall(p.read_text()))
+    for p in (root(system) / "scripts").rglob("*"):
+        if p.suffix in (".sql", ".json"):
+            found |= set(TOKEN.findall(p.read_text()))
     return sorted(found)
 
 
@@ -142,6 +144,8 @@ def ensure(system, ws) -> Path:
     for c in cats:
         variables[f"catalog_{_slug(c)}"] = {"description": f"Catalog that is '{c}' in dev", "default": c}
     _write_yaml(r / "resources" / "maya_variables.yml", {"variables": variables})
+    # Bundle sync skips git-ignored files; MAYA's runner and scripts must deploy even where bundle/ is ignored.
+    _write_yaml(r / "resources" / "maya_sync.yml", {"sync": {"include": ["../maya_deploy/**", "../scripts/**"]}})
 
     tasks, prev = [], None
     for g in load_goals().values():

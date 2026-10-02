@@ -165,8 +165,22 @@ class Goal:
         return self.spec["metadata"].get("milestone")
 
     @property
+    def required_milestones(self):
+        return self.spec["spec"].get("requires_milestones") or []
+
+    @property
     def prerequisites(self):
-        return self.spec["spec"].get("prerequisites") or []
+        """Declared prerequisites plus every goal of the milestones the goal requires."""
+        from .milestones import required_goals
+        out = list(self.spec["spec"].get("prerequisites") or [])
+        for m in self.required_milestones:
+            out += [g for g in required_goals(m) if g not in out]
+        return out
+
+    @property
+    def prerequisite_label(self):
+        own = ", ".join(self.spec["spec"].get("prerequisites") or [])
+        return " + ".join(x for x in [own, *self.required_milestones] if x) or "-"
 
     @property
     def package(self):
@@ -201,7 +215,11 @@ def load_goals(goals_dir: Path = GOALS_DIR) -> dict:
             raise SpecError(f"{f}: kind must be Goal")
         g = Goal(f.parent, spec)
         goals[g.id] = g
+    from .milestones import MILESTONES
     for g in goals.values():
+        for m in g.required_milestones:
+            if m not in MILESTONES:
+                raise SpecError(f"{g.id}: unknown milestone {m!r} in requires_milestones")
         for p in g.prerequisites:
             if p not in goals:
                 raise SpecError(f"{g.id}: unknown prerequisite {p}")

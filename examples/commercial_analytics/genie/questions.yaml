@@ -1,0 +1,41 @@
+# G5 Genie space: business rules and the questions users ask, per page of the semantic model (G3).
+# Written by the business owner and key users. Pages are keyed by page id or page name. MAYA's bi_author agent adds
+# questions until every page has goals.G5.min_questions_per_page; the business owner reviews them before deployment.
+# A question may carry trusted SQL (`sql:`); mark the questions a page is mainly for as `critical`.
+rules:
+  - Revenue is quantity times unit price for orders that are not cancelled, in USD.
+  - Fill rate is units shipped divided by units ordered; never average daily fill rates.
+  - Always show region, product and customer names, never ids.
+  - When a question names no period, use the latest full calendar month in the data.
+
+pages:
+  sales_performance:
+    - question: What was total revenue last month?
+      critical: true
+      sql: |
+        SELECT MEASURE(revenue) AS revenue
+        FROM solution_builder.maya_metrics.sales_performance
+        WHERE order_month = (SELECT MAX(order_month) FROM solution_builder.maya_metrics.sales_performance
+                             WHERE order_date < DATE_TRUNC('MONTH', CURRENT_DATE()))
+        GROUP BY ALL
+    - question: Which regions grew revenue the most from the previous month?
+    - Which products sold the most units this quarter?
+    - What is the revenue trend by month for each product category?
+    - How does average order value compare across regions?
+  customer_purchasing:
+    - How many active customers did we have each month?
+    - Which customer segment brings in the most revenue?
+  customer_profiles:
+    - Who are our largest customers by lifetime revenue?
+    - Which customers have not ordered in the last 60 days?
+  order_fulfilment:
+    - question: What is the fill rate by region this month?
+      critical: true
+    - Which products have the lowest fill rate?
+  returns_overview:
+    - What are the most common reasons for returns?
+    - Which regions have the highest value of returns?
+  product_catalogue:
+    - Which product categories do we sell?
+  sales_regions:
+    - Which region has the most customers?

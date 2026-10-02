@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from maya.core.catalog import describe_layers
+from maya.core.milestones import progress as milestone_progress, visible as visible_milestones
 
 
 def collect(engine) -> dict:
@@ -18,6 +19,7 @@ def collect(engine) -> dict:
         cert = s["certification"]
         goals.append({
             "id": gid, "title": g.title, "milestone": g.milestone, "prerequisites": g.prerequisites,
+            "prerequisite_label": g.prerequisite_label,
             "status": s["status"], "detail": s["detail"], "missing_prerequisites": s["missing_prerequisites"],
             "stale_reasons": s["stale_reasons"], "config": s["inputs"], "config_hash": s["config_hash"],
             "config_error": s["config_error"],
@@ -29,11 +31,9 @@ def collect(engine) -> dict:
             "certification": {k: cert[k] for k in ("certified_by", "certified_at", "expires_at", "config_hash", "run_id")}
             if cert else None,
         })
-    milestones = {}
-    for gl in goals:
-        if gl["milestone"]:
-            upto = [x for x in goals if x["id"][1:].zfill(3) <= gl["id"][1:].zfill(3)]
-            milestones[gl["milestone"]] = all(x["status"] == "certified" for x in upto)
+    statuses = {gl["id"]: gl["status"] for gl in goals}
+    progress = {m: milestone_progress(m, statuses) for m in visible_milestones(statuses)}
+    milestones = {m: p["reached"] for m, p in progress.items()}
     pending = st.pending_approvals()
     nxt = engine.next_goal(states)
     actions = []
@@ -54,7 +54,7 @@ def collect(engine) -> dict:
             "spec_hash": engine.system.spec_hash, "workspace": engine.ws.host, "catalogs": engine.system.catalogs,
             "foundation": describe_layers(engine.system),
             "ai_gateway_model": engine.system.model(), "goals": goals, "goals_implemented": implemented,
-            "milestones": milestones, "pending_approvals": [{k: p[k] for k in ("goal_id", "gate", "approver", "approval_id", "created_at")}
+            "milestones": milestones, "milestone_progress": progress, "pending_approvals": [{k: p[k] for k in ("goal_id", "gate", "approver", "approval_id", "created_at")}
                                                          for p in pending],
             "next_actions": actions}
 
@@ -74,7 +74,7 @@ def render_html(r: dict) -> str:
         color = _COLORS.get(g["status"], "#444")
         passed = sum(c["passed"] for c in g["checks"])
         cert = g["certification"]
-        rows.append(f"""<tr><td><b>{_e(g['id'])}</b></td><td>{_e(g['title'])}</td><td>{_e(', '.join(g['prerequisites']) or '-')}</td>
+        rows.append(f"""<tr><td><b>{_e(g['id'])}</b></td><td>{_e(g['title'])}</td><td>{_e(g['prerequisite_label'])}</td>
 <td><span class="pill" style="background:{color}">{_e(g['status'])}</span><div class="sub">{_e(g['detail'] or '; '.join(g['stale_reasons']) or ('needs ' + ', '.join(g['missing_prerequisites']) if g['missing_prerequisites'] else ''))}</div></td>
 <td>{f'{passed}/{len(g["checks"])}' if g['checks'] else '-'}</td>
 <td>{_e(cert['certified_by']) + '<div class="sub">' + _e(cert['certified_at']) + ' &rarr; ' + _e(cert['expires_at']) + '</div>' if cert else '-'}</td>
@@ -87,7 +87,7 @@ def render_html(r: dict) -> str:
 <p class="sub">model: {_e(g['model'])} &middot; last run: {_e((g['last_run'] or {}).get('run_id'))} ({_e((g['last_run'] or {}).get('status'))})</p>
 <details><summary>configuration</summary><pre>{_e(json.dumps(g['config'], indent=1))}</pre></details>
 {'<table><tr><th></th><th>check</th><th>checklist</th><th>severity</th><th>observed</th><th>expected</th></tr>' + checks + '</table>' if checks else '<p class="sub">no checks recorded</p>'}""")
-    ms = " ".join(f'<span class="pill" style="background:{"#1a7f37" if v else "#6e7781"}">{_e(k)}: {"reached" if v else "not yet"}</span>'
+    ms = " ".join(f'<span class="pill" style="background:{"#1a7f37" if v else "#6e7781"}">{_e(k)}: {_e(milestone_text(r, k))}</span>'
                   for k, v in r["milestones"].items())
     actions = "".join(f"<li>{_e(a)}</li>" for a in r["next_actions"]) or "<li>nothing pending</li>"
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>MAYA status - {_e(r['system'])}</title><style>
@@ -104,6 +104,17 @@ td,th{{border-bottom:1px solid #d0d7de;padding:6px 8px;text-align:left;vertical-
 </body></html>"""
 
 
+def milestone_text(r, name) -> str:
+    p = (r.get("milestone_progress") or {}).get(name)
+    if not p or p["reached"]:
+        return "reached" if r["milestones"][name] else "not yet"
+    text = f"not yet ({p['certified']} of {p['required']} goals certified"
+    if p["unreleased"]:
+        u = p["unreleased"]
+        text += f"; {u[0]} to {u[-1]} not released yet" if len(u) > 1 else f"; {u[0]} not released yet"
+    return text + ")"
+
+
 def render_text(r: dict) -> str:
     lines = [f"MAYA status  {r['system']}   model={r['ai_gateway_model']}   {r['generated_at']}", ""]
     for layer, f in r["foundation"].items():
@@ -117,7 +128,7 @@ def render_text(r: dict) -> str:
         lines.append(f"  {g['id']:<4} {g['title'][:34]:<34} {g['status']:<18} checks {passed}/{len(g['checks'])}"
                      + (f"  certified by {cert['certified_by']} until {str(cert['expires_at'])[:10]}" if cert else ""))
     lines.append("")
-    lines += [f"  milestone {k}: {'reached' if v else 'not yet'}" for k, v in r["milestones"].items()]
+    lines += [f"  milestone {k}: {milestone_text(r, k)}" for k in r["milestones"]]
     lines += ["", "Next actions:"] + [f"  - {a}" for a in r["next_actions"] or ["nothing pending"]]
     return "\n".join(lines)
 

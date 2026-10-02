@@ -1,0 +1,84 @@
+# G5 benchmarks: questions business users ask, with the SQL that gives the right answer.
+# Written and owned by the business owner. Genie must answer at least goals.G5.pass_threshold of them correctly.
+# Name the period in every question: Genie's answer and the expected SQL must mean the same thing.
+benchmarks:
+  - question: What was total revenue in August 2026?
+    sql: |
+      SELECT MEASURE(revenue) AS revenue
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31'
+
+  - question: What was revenue by region in the third quarter of 2026?
+    sql: |
+      SELECT region, MEASURE(revenue) AS revenue
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30'
+      GROUP BY region
+
+  - question: Which product category had the highest revenue in September 2026?
+    sql: |
+      SELECT category, MEASURE(revenue) AS revenue
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+      GROUP BY category
+      ORDER BY revenue DESC
+      LIMIT 1
+
+  - question: How many orders were placed in July 2026?
+    sql: |
+      SELECT MEASURE(orders) AS orders
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31'
+
+  - question: What was the average order value per month from June to September 2026?
+    sql: |
+      SELECT order_month, MEASURE(avg_order_value) AS avg_order_value
+      FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-06-01' AND DATE'2026-09-30'
+      GROUP BY order_month
+      ORDER BY order_month
+
+  - question: What was the overall fill rate in August 2026?
+    sql: |
+      SELECT MEASURE(fill_rate) AS fill_rate
+      FROM solution_builder.maya_metrics.fulfilment
+      WHERE ship_date BETWEEN DATE'2026-08-01' AND DATE'2026-08-31'
+
+  - question: What was the fill rate by region in September 2026?
+    sql: |
+      SELECT region, MEASURE(fill_rate) AS fill_rate
+      FROM solution_builder.maya_metrics.fulfilment
+      WHERE ship_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+      GROUP BY region
+
+  - question: How many returns were there by return reason in the third quarter of 2026?
+    sql: |
+      SELECT reason, MEASURE(returns) AS returns
+      FROM solution_builder.maya_metrics.returns
+      WHERE return_date BETWEEN DATE'2026-07-01' AND DATE'2026-09-30'
+      GROUP BY reason
+
+  - question: What was the total value of returned goods in July 2026?
+    sql: |
+      SELECT MEASURE(returned_value) AS returned_value
+      FROM solution_builder.maya_metrics.returns
+      WHERE return_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31'
+
+  - question: How many active customers are there in each customer segment?
+    sql: |
+      SELECT segment, MEASURE(active_customers) AS active_customers
+      FROM solution_builder.maya_metrics.customer_orders
+      GROUP BY segment
+
+  - question: Who are the top 5 customers by lifetime revenue?
+    sql: |
+      SELECT customer_name, lifetime_revenue
+      FROM solution_builder.maya_gold.customer_360
+      ORDER BY lifetime_revenue DESC
+      LIMIT 5
+
+  - question: How many customers are in each region?
+    sql: |
+      SELECT region_name, COUNT(*) AS customers
+      FROM solution_builder.maya_gold.customer_360
+      GROUP BY region_name

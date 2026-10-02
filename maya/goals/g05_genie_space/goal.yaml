@@ -1,0 +1,52 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G5
+  name: genie_space
+  title: Genie space
+  milestone: AI Ready
+  description: >
+    A Genie space over the metric views and Gold that answers business questions correctly. The customer supplies the
+    business rules, the questions users ask per semantic page and a benchmark set with expected answers. MAYA builds
+    the space from the certified semantic model: sources, instructions (rules, KPI definitions, taxonomy, glossary),
+    sample questions and trusted SQL. The bi_author agent writes page guidance and fills each page up to the minimum
+    number of questions. MAYA proves every SQL runs, delivers the space through the project bundle, and certifies it
+    once Genie's answers pass the benchmark threshold and the business owner signs off.
+spec:
+  prerequisites: [G2, G3]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: space.json, kind: artefact}
+    - {name: benchmark_results.json, kind: artefact}
+    - {name: genie_space, kind: workspace}
+  validation:
+    - {id: space_exists, check: missing_space, expect: "== 0", severity: mandatory, checklist: AR-1.1,
+       description: The Genie space exists and is the one MAYA manages for this project}
+    - {id: space_as_approved, check: space_differences, expect: "== 0", severity: mandatory, checklist: AR-1.2,
+       description: Sources, instructions, sample questions, trusted SQL and benchmarks in the space are exactly the approved ones}
+    - {id: curated_sources_only, check: uncurated_sources, expect: "== 0", severity: mandatory, checklist: AR-1.1,
+       description: Every data source is a metric view or a Gold asset; none is Bronze (Silver only where allowed)}
+    - {id: instructions_complete, check: instruction_gaps, expect: "== 0", severity: mandatory, checklist: AR-1.2,
+       description: The instructions state every business rule, every KPI measure and every page of the taxonomy}
+    - {id: questions_per_page, check: thin_pages, expect: "== 0", severity: mandatory, checklist: AR-1.2,
+       description: Every page of the semantic model has at least the minimum number of sample questions}
+    - {id: benchmarks_defined, check: benchmark_gaps, expect: "== 0", severity: mandatory, checklist: AR-1.3,
+       description: At least the minimum number of benchmark questions, each with an expected answer SQL that runs}
+    - {id: benchmarks_pass, check: benchmark_shortfall, expect: "== 0", severity: mandatory, checklist: AR-1.3,
+       description: Genie answers at least the pass threshold of the benchmark questions correctly}
+    - {id: trusted_sql_runs, check: failing_trusted_sql, expect: "== 0", severity: mandatory, checklist: AR-1.4,
+       description: Every trusted SQL in the space runs on the warehouse and reads only the space's sources}
+    - {id: access_granted, check: missing_access, expect: "== 0", severity: mandatory, checklist: AR-1.1,
+       description: Every declared group or service principal holds its permission on the space}
+    - {id: critical_questions_trusted, check: untrusted_critical_questions, expect: ">= 0", severity: advisory, checklist: AR-1.4,
+       description: Questions marked critical without trusted SQL (informational)}
+    - {id: benchmark_review, check: benchmarks_needing_review, expect: ">= 0", severity: advisory, checklist: AR-1.3,
+       description: Benchmark answers Genie's evaluation could not grade automatically (informational)}
+  certification:
+    approvers: [business_owner]
+    valid_days: 90

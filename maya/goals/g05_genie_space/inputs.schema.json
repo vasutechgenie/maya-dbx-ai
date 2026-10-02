@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["title", "questions", "benchmarks"],
+  "properties": {
+    "title": {"type": "string", "minLength": 3, "maxLength": 120, "description": "Title of the Genie space"},
+    "description": {"type": "string", "maxLength": 2000, "description": "What the space is for, shown to its users"},
+    "questions": {"type": "string", "description": "YAML file (relative to maya.yaml): business rules and the questions users ask, per page"},
+    "benchmarks": {"type": "string", "description": "YAML file (relative to maya.yaml): benchmark questions with expected answer SQL"},
+    "pass_threshold": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.9,
+                       "description": "Share of benchmark questions Genie must answer correctly"},
+    "min_questions_per_page": {"type": "integer", "minimum": 1, "maximum": 20, "default": 5},
+    "min_benchmarks": {"type": "integer", "minimum": 1, "default": 10},
+    "sources": {"type": "array", "items": {"type": "string"},
+                "description": "Data sources (catalog.schema.name or schema.name). Default: every metric view and Gold asset of the semantic model"},
+    "exclude": {"type": "array", "items": {"type": "string"}, "default": [],
+                "description": "Sources to leave out of the default list (full names or glob patterns)"},
+    "allow_silver": {"type": "boolean", "default": false, "description": "Allow Silver assets as sources (Bronze never)"},
+    "access": {
+      "type": "array", "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "group": {"type": "string"},
+          "service_principal": {"type": "string"},
+          "level": {"type": "string", "enum": ["CAN_READ", "CAN_RUN", "CAN_EDIT", "CAN_MANAGE"], "default": "CAN_RUN"}
+        },
+        "oneOf": [{"required": ["group"]}, {"required": ["service_principal"]}]
+      },
+      "description": "Who may use the space (account-level groups or service principals). Data access itself comes from G4"
+    },
+    "parent_path": {"type": "string", "default": "MAYA",
+                    "description": "Workspace folder of the space; relative paths are under the deploying identity's home"},
+    "benchmark_timeout_minutes": {"type": "integer", "minimum": 1, "default": 30},
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental",
+             "description": "full re-authors every page; incremental reuses the certified authoring of unchanged pages"},
+    "model": {"type": "string"}
+  },
+  "$defs": {
+    "questions_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "rules": {"type": "array", "items": {"type": "string", "minLength": 5}},
+        "pages": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "oneOf": [
+                {"type": "string", "minLength": 5},
+                {"type": "object", "additionalProperties": false, "required": ["question"],
+                 "properties": {"question": {"type": "string", "minLength": 5}, "sql": {"type": "string"},
+                                "critical": {"type": "boolean"}}}
+              ]
+            }
+          }
+        }
+      }
+    },
+    "benchmarks_file": {
+      "type": "object", "additionalProperties": false, "required": ["benchmarks"],
+      "properties": {
+        "benchmarks": {
+          "type": "array",
+          "items": {"type": "object", "additionalProperties": false, "required": ["question", "sql"],
+                    "properties": {"question": {"type": "string", "minLength": 5}, "sql": {"type": "string", "minLength": 8}}}
+        }
+      }
+    }
+  }
+}

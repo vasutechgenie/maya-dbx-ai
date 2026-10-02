@@ -9,7 +9,8 @@ If you want to try MAYA first on synthetic data, do the [example tutorial](TUTOR
 foundation and runs the same goals; this tutorial does not repeat its explanations of each check, so keep it at hand
 as a reference.
 
-The AI Enabled goals G0 to G4 are available now. The AI Ready goals G5 to G12 will be released later.
+The AI Enabled goals G0 to G4 are available now, and so is the first AI Ready goal, G5 Genie space (section 17).
+G6 to G12 will be released later.
 
 Contents
 
@@ -29,6 +30,7 @@ Contents
 14. [Keeping it AI Enabled](#14-keeping-it-ai-enabled)
 15. [Rolling out to more data products](#15-rolling-out-to-more-data-products)
 16. [Common situations on real foundations](#16-common-situations-on-real-foundations)
+17. [Next: G5 Genie space on your data product](#17-next-g5-genie-space-on-your-data-product)
 
 ---
 
@@ -810,3 +812,29 @@ Keep running `maya run` until it says there is nothing to run.
 
 For every other error message, see the [troubleshooting table](TUTORIAL.md#20-troubleshooting) in the example
 tutorial.
+
+---
+
+## 17. Next: G5 Genie space on your data product
+
+Once AI Enabled is reached, G5 builds a Genie space over your metric views and Gold. The example tutorial
+([section 18.1](TUTORIAL.md#181-g5-genie-space)) explains every step and check. What changes on your own data:
+
+1. **Collect the questions first.** Ask the business owner and two or three key users for the questions they ask
+   every week, grouped by the pages of your semantic model (G3). Five per page is the default minimum; MAYA's agent
+   fills the gap, but your users' own wording makes the best sample questions. Write them into `genie/questions.yaml`.
+2. **Write the business rules** at the top of the same file: what each headline KPI means, the default period, how
+   names are shown, anything Genie must never do (for example "never average daily rates"). Keep each rule one
+   sentence.
+3. **Write at least ten benchmarks** in `genie/benchmarks.yaml` with the SQL that gives the right answer, preferably
+   on the metric views (`MEASURE(...)`). Name the period in each question. Cover every page and every headline KPI.
+4. **Add the `goals.G5` block** to `maya.yaml`: title, description, the two files, `pass_threshold` (start with 0.8)
+   and the groups that may use the space. Those groups' data access must already be granted by G4.
+5. **Run it**: `maya validate`, then `maya run --goal G5`. The business owner reviews the space before it is deployed
+   and the benchmark results before it is certified.
+6. **If benchmarks fail**, read `benchmark_results.json` in the run's artefacts: for each benchmark Genie got wrong
+   it shows Genie's SQL and the reason. Add a rule, attach trusted SQL to the kind of question that fails, or improve
+   the measure's description in your G2 definitions, then run G5 again. Raise `pass_threshold` as the space matures.
+
+Commit `genie/`, `maya.yaml` and `bundle/` as for the other goals; CI/CD deploys the same space to test and production
+(`bundle/scripts/G5/10_space/genie_space.json`, with catalogs replaced per target).

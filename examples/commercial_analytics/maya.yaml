@@ -80,6 +80,15 @@ goals:
         columns: [region_name]
         by_group: {"${env:MAYA_CONSUMER_GROUP}": [North America West, North America East]}
         unfiltered_for: ["${env:MAYA_ENGINEER_GROUP}"]
+  G5:                                      # AI Ready: needs AI Enabled (G0 to G4 certified)
+    title: Commercial analytics
+    description: Ask about sales, customers, fulfilment and returns of the commercial data product.
+    questions: genie/questions.yaml        # business rules and the questions users ask, per semantic page
+    benchmarks: genie/benchmarks.yaml      # 10+ questions with the SQL that gives the right answer
+    pass_threshold: 0.8                    # share of benchmarks Genie must answer correctly
+    access:                                # who may ask questions; their data access comes from G4
+      - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

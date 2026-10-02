@@ -68,7 +68,7 @@ def cmd_goals(args):
         extra = f"   ({s['detail']})" if s.get("self_certified") and s.get("detail") else ""
         if s.get("config_error") and s["status"] == "invalid_config":
             extra = f"   ({s['config_error']})"
-        print(f"  {gid:<4} {s['goal'].title:<36} {s['status']:<18} needs: {', '.join(s['goal'].prerequisites) or '-'}{extra}")
+        print(f"  {gid:<4} {s['goal'].title:<36} {s['status']:<18} needs: {s['goal'].prerequisite_label}{extra}")
     return 0
 
 
@@ -80,7 +80,7 @@ def cmd_plan(args):
         return 0
     g = e.goals[gid]
     nodes = g.graph()["nodes"]
-    print(f"{gid} {g.title}  (prerequisites: {', '.join(g.prerequisites) or 'none'})")
+    print(f"{gid} {g.title}  (prerequisites: {g.prerequisite_label})")
     print(f"inputs: {json.dumps(g.effective_inputs(e.system))}")
     for name, n in nodes.items():
         print(f"  {n['type']:<9} {name:<22} {n.get('run') or n.get('agent') or n.get('approver') or ''}")

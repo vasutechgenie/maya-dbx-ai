@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["page", "guidance", "questions"],
+  "properties": {
+    "page": {"type": "string", "description": "page id, exactly as given"},
+    "guidance": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"type": "string", "minLength": 10, "maxLength": 400}},
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["question", "critical"],
+        "properties": {
+          "question": {"type": "string", "minLength": 8, "maxLength": 300},
+          "critical": {"type": "boolean"},
+          "sql": {"type": "string", "maxLength": 4000}
+        }
+      }
+    }
+  }
+}

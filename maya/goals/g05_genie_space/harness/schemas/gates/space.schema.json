@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "required": ["marker", "title", "sources", "instructions", "pages", "sample_questions", "trusted_sql", "benchmarks", "access", "findings"],
+  "properties": {
+    "marker": {"type": "string", "pattern": "^maya:"},
+    "title": {"type": "string", "minLength": 3},
+    "description": {"type": ["string", "null"]},
+    "sources": {"type": "array", "minItems": 1, "items": {"type": "string", "pattern": "^[^.]+\\.[^.]+\\.[^.]+$"}},
+    "instructions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "pages": {"type": "array", "minItems": 1,
+              "items": {"type": "object", "required": ["id", "name", "questions"],
+                        "properties": {"questions": {"type": "integer", "minimum": 0}}}},
+    "sample_questions": {"type": "array", "minItems": 1,
+                         "items": {"type": "object", "required": ["question", "page", "origin"],
+                                   "properties": {"origin": {"enum": ["customer", "agent"]}}}},
+    "trusted_sql": {"type": "array",
+                    "items": {"type": "object", "required": ["question", "sql", "origin"],
+                              "properties": {"origin": {"enum": ["customer", "agent"]}}}},
+    "benchmarks": {"type": "array", "minItems": 1,
+                   "items": {"type": "object", "required": ["question", "sql"]}},
+    "access": {"type": "array"},
+    "findings": {"type": "array", "items": {"type": "string"}}
+  }
+}

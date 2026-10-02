@@ -92,7 +92,7 @@ def publish(engine, report) -> list[str]:
             f"needs {', '.join(g['missing_prerequisites'])}" if g["missing_prerequisites"] else None)
         rows.append("(" + ", ".join([
             lit(name), lit(g["id"]), str(int(g["id"][1:])), lit(g["title"]), lit(g["milestone"]),
-            lit(", ".join(g["prerequisites"])), lit(g["status"]), lit(reason),
+            lit(g["prerequisite_label"]), lit(g["status"]), lit(reason),
             str(sum(c["passed"] for c in g["checks"])), str(len(g["checks"])),
             str(sum(1 for c in g["checks"] if c["severity"] == "mandatory" and not c["passed"])),
             lit(cert.get("certified_by")), _ts(cert.get("certified_at")), _ts(cert.get("expires_at")), lit(cert.get("run_id")),
