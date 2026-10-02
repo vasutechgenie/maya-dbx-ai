@@ -343,6 +343,7 @@ Goal statuses:
 | `certified` | Certified and current |
 | `stale` | Was certified, but something changed (configuration, a prerequisite, the workspace, or the expiry date) |
 | `invalid_config` | The goal's inputs in `maya.yaml` do not validate; the message says why |
+| `not_configured` | The goal needs inputs and has no entry under `goals:` in `maya.yaml` yet; add one to use it |
 
 Two commands help before every run:
 
