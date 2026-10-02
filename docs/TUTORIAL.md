@@ -35,7 +35,8 @@ Contents
 15. [Certification options: automatic, manual, self-certified](#15-certification-options-automatic-manual-self-certified)
 16. [The Asset Bundle and CI/CD](#16-the-asset-bundle-and-cicd)
 17. [Using MAYA on your own foundation](#17-using-maya-on-your-own-foundation)
-18. [AI Ready: G5 Genie space, G6 dashboards, G7 data quality and the goals to come](#18-ai-ready-g5-genie-space-g6-dashboards-g7-data-quality-and-the-goals-to-come)
+18. [AI Ready: G5 to G12](#18-ai-ready-g5-to-g12)
+    - [Milestone reached: AI Ready](#189-ai-ready-reached)
 19. [Command reference](#19-command-reference)
 20. [Troubleshooting](#20-troubleshooting)
 21. [Cleaning up](#21-cleaning-up)
@@ -51,7 +52,7 @@ items to the AI Ready goals.
 | Milestone | Goals | Reached when | What it means | Release |
 |-----------|-------|--------------|---------------|---------|
 | **1 · AI Enabled** | G0 Foundation intake, G1 Metadata, G2 Metric views, G3 Semantic model, G4 Governance and access | G0 to G4 are certified | The foundation is described, measured, modelled and governed: an AI system can find, understand and safely use the data | Available now |
-| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 to G7 available now; G8 to G12 released later |
+| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | Available now |
 
 Every AI Ready goal also requires the AI Enabled milestone, so you finish G0 to G4 first.
 
@@ -85,8 +86,7 @@ flowchart LR
 ```
 
 Sections 8 to 12 walk through the five AI Enabled goals in order; at the end of section 12 the example reaches AI
-Enabled. Section 18 runs the AI Ready goals G5 Genie space and G6 AI/BI dashboards, and describes the goals still
-to come.
+Enabled. Section 18 runs the eight AI Ready goals G5 to G12; at the end of it the example reaches AI Ready.
 
 ---
 
@@ -114,7 +114,7 @@ sensitivity tag". Each goal has:
 | AI Enabled | G2 | Metric views | G1 | Every KPI as a Unity Catalog metric view, each measure proven against an independent reference SQL |
 | AI Enabled | G3 | Semantic model | G1, G2 | Domain > subdomain > page taxonomy, tags on every asset, ontology registry, business glossary, `ontology_lookup()` |
 | AI Enabled | G4 | Governance and access | G1, G2 | Roles and grants, ABAC policies and column masks over sensitive columns, row filters, an audit view |
-| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 to G7 now, G8 to G12 later (section 18) |
+| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | Section 18 |
 
 **Milestone.** Each goal's `goal.yaml` names its milestone (`metadata.milestone`). `maya status` reports a milestone
 as reached when all its goals are certified.
@@ -1084,11 +1084,10 @@ Several projects can share one workspace; each has its own state schema and dash
 
 ---
 
-## 18. AI Ready: G5 Genie space, G6 dashboards, G7 data quality and the goals to come
+## 18. AI Ready: G5 to G12
 
 AI Ready is milestone 2. It builds on AI Enabled so that people and agents can use the data product. Every AI Ready
-goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space, G6 AI/BI dashboards and G7
-data quality monitoring are available now; G8 to G12 will be released later.
+goal requires the AI Enabled milestone, plus the goals listed for it. The sections below run them in order.
 
 ### 18.1 G5 Genie space
 
@@ -1235,7 +1234,7 @@ values exactly as G4 defines them. `maya status` now shows G5:
   G5   Genie space                        certified          checks 11/11  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (6 of 13 goals certified; G8 to G12 not released yet)
+  milestone AI Ready: not yet (6 of 13 goals certified)
 ```
 
 AI Ready stays "not yet" until G6 to G12 are certified.
@@ -1361,7 +1360,7 @@ The schedule (07:00 UTC daily, subscriber: the approver) is under **Schedule** o
   G6   AI/BI dashboards                   certified          checks 12/12  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (7 of 13 goals certified; G8 to G12 not released yet)
+  milestone AI Ready: not yet (7 of 13 goals certified)
 ```
 
 Edits made to the dashboard in the UI are drift: the next `maya status` reports G6 stale. To change a page, change
@@ -1550,26 +1549,681 @@ quality - commercial-analytics*. `maya status` now shows:
   G7   Data quality monitoring            certified          checks 12/12  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (8 of 13 goals certified; G8 to G12 not released yet)
+  milestone AI Ready: not yet (8 of 13 goals certified)
 ```
 
 To change a rule, edit `quality/rules.yaml`. To turn a suggestion down, add its id to `reject`. Then run G7 again.
 
-### 18.4 The goals to come
+### 18.4 G8 Agent tools
 
-| Goal | Outcome | Prerequisites | Certified by | Checklist |
-|------|---------|---------------|--------------|-----------|
-| G8 Agent tools (UC functions) | Reusable business actions as parameterised, self-describing Unity Catalog functions, tested, granted and exposed through managed MCP | G2, G3 | Security | AR-3.1 to AR-3.4 |
-| G9 Operations MCP server | Operational notebooks as parameterised jobs returning JSON, served to agents by an MCP server with OAuth and least privilege | G4, G7 | Security | AR-4.1 to AR-4.4 |
-| G10 Agents | A supervisor with capability-scoped sub-agents, registered in Unity Catalog, deployed to Model Serving and traced | G5, G8, G9 | Product owner | AR-5.1 to AR-5.4 |
-| G11 Evaluation | Agent and Genie answers verified against SQL truth on the metric views, with a regression job on change | G10 | Business owner | AR-6.1 to AR-6.3 |
-| G12 Operations and documentation | Jobs scheduled with retries and notifications, monitoring, runbooks, a product document and an onboarding page | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
+*Milestone 2 · AI Ready, step 4 of 8.* Architecture of this goal:
+[maya/goals/g08_agent_tools](../maya/goals/g08_agent_tools/README.md).
 
-**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G7: a block
-per goal under `goals:` in `maya.yaml`, validated inputs, a graph harness with agents and gates, a validator, delivery
-through the project's Asset Bundle, and automatic or manual certification. What you build for AI Enabled is what they
-use: the metric views (G2) feed agent tools and evaluation, and the governance roles (G4) scope the MCP server and
-agent tools.
+**What it does.** G8 turns the business actions agents may call into Unity Catalog SQL table functions. Each one has
+typed parameters and a description on the function, on every parameter and on every result column, so any agent (and
+any person) can find the right one and call it correctly. It delivers:
+
+- **Tool functions** in their own schema, reading only the metric views (G2), the semantic model (G3) and Gold;
+- **EXECUTE grants** to the agent identity and the executors you declare;
+- **The managed MCP server** of the schema: the workspace serves every function there as an MCP tool at
+  `/api/2.0/mcp/functions/<catalog>/<schema>`, with nothing to deploy.
+
+**The agent identity.** The agents (G10), the operations MCP clients (G9) and the tool tests act as one service
+principal. Security provisions it and keeps its OAuth client id and secret in a secret scope. MAYA reads them only in
+memory and signs in with OAuth machine-to-machine. Its data access is a G4 role, so it reads exactly what a consumer
+reads, masks included. The example's `identity/create_agent_identity.py` stands in for security: it creates the
+service principal (or uses a stopped app's principal when you may not create one), mints a secret, puts it in the
+scope `maya_agent` and prints the line to export:
+
+```bash
+python identity/create_agent_identity.py --profile <your-profile>
+export MAYA_AGENT_SP=<application id it prints>
+```
+
+`maya.yaml` names it once, for every goal that needs it:
+
+```yaml
+agent_identity:
+  service_principal: ${env:MAYA_AGENT_SP}  # application id
+  secret_scope: maya_agent
+```
+
+**Inputs.** A tools file written by the product owner, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G8:
+    schema: maya_tools                     # tool functions live in their own schema
+    tools: tools/tools.yaml                # the product owner's tools with example calls
+    executors:                             # USE SCHEMA and EXECUTE; the agent identity is always included
+      - "${env:MAYA_CONSUMER_GROUP}"
+      - "${env:MAYA_ENGINEER_GROUP}"
+```
+
+Each tool has an intent in business words, typed parameters and example calls with what they must return. An
+expectation can bound the row count, require columns, or require the result to equal an independent query, to the
+cent:
+
+```yaml
+tools:
+  - name: revenue_by_region
+    intent: Revenue, number of orders and average order value per sales region for orders placed between two dates.
+    parameters:
+      - {name: start_date, type: DATE, description: First order date included}
+      - {name: end_date, type: DATE, description: Last order date included}
+    examples:
+      - args: {start_date: "2026-09-01", end_date: "2026-09-30"}
+        expect:
+          min_rows: 6
+          columns: [region, revenue, orders, avg_order_value]
+          matches:
+            key: [region]
+            sql: |
+              SELECT region_name AS region, SUM(revenue) AS revenue, SUM(orders) AS orders
+              FROM solution_builder.maya_gold.sales_daily
+              WHERE order_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+              GROUP BY region_name
+```
+
+The `tool_smith` agent writes each function's SQL and descriptions unless you give the `sql` yourself.
+
+**Run it:**
+
+```bash
+maya run --goal G8
+```
+
+```
+Running G8 Agent tools  run=g8-...
+  [code] load
+     5 tools; 0 drafts reused from certification, 5 to draft
+  [agent] draft
+     agent draft-0: 26.0s
+     ...
+  [code] plan
+     plan: 5 tools, 3 executors, 0 findings
+  [gate] review
+  [code] apply
+     deployed via bundle: 7 scripts, 24 statements (job run ...)
+     apply: 5 tool functions, grants to 3 executors
+  [validator] validate
+     PASS tools_deployed: observed 0 (expected == 0)
+     ...
+     PASS mcp_listed: observed 0 (expected == 0)
+     PASS numbers_tested: observed 2 (expected >= 0)
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G8 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** checks the tools file and lists the sources a tool may read: the metric views with their dimensions and
+   measures, the semantic model and Gold. Tools whose intent and sources did not change since the last certified run
+   reuse that run's draft.
+2. **draft** runs one `tool_smith` agent per tool. It writes the body (one `SELECT`, `MEASURE()` for metric view
+   measures) and the descriptions.
+3. **plan** compiles every function with `DESCRIBE QUERY` and dry-runs every example. A tool that fails is redrafted
+   once with the problems; a tool that still fails stops the run.
+4. **review** is a gate: security approves `tools_plan.json`, every function's SQL and descriptions and who may run
+   them.
+5. **apply** writes `bundle/scripts/G8` (schema, one script per function, grants) and deploys it.
+6. **validate** reads the functions back and runs every example **as the agent identity**, so a missing grant or a
+   mask fails the test. It also lists the tools through the managed MCP server. The results are in
+   `tool_tests.json`.
+7. **sign_off** is a second gate: security approves the test results.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `tools_deployed` | mandatory | Every tool is a SQL table function with exactly the approved parameters and result columns |
+| `sql_as_approved` | mandatory | Each function runs exactly the approved SQL, a read with typed parameters (no SQL built from strings) |
+| `self_describing` | mandatory | The function, every parameter and every result column carry a description |
+| `tests_pass` | mandatory | Every example call returns what the product owner expects, run as the agent identity |
+| `execute_granted` | mandatory | Every executor, the agent identity first, holds USE SCHEMA and EXECUTE on every tool |
+| `mcp_listed` | mandatory | The managed MCP server lists every tool with its description and typed inputs |
+| `numbers_tested` | advisory | Tools whose tests check only the shape of the result, never its numbers |
+
+**See the result.** Open **Catalog**, then `solution_builder` › `maya_tools`, and select a function: its comment,
+parameters and result columns are all described. In SQL:
+
+```sql
+SELECT * FROM solution_builder.maya_tools.revenue_by_region(start_date => DATE'2026-09-01', end_date => DATE'2026-09-30');
+```
+
+### 18.5 G9 Operations MCP server
+
+*Milestone 2 · AI Ready, step 5 of 8.* Architecture of this goal:
+[maya/goals/g09_ops_mcp](../maya/goals/g09_ops_mcp/README.md).
+
+**What it does.** G9 gives agents safe hands on the data product's operations. It delivers:
+
+- **One job per operation**, running the operation's notebook with typed job parameters, one run at a time and a
+  timeout. Each notebook returns its result as JSON.
+- **A custom MCP server**, deployed as a Databricks App. Each operation is a tool, plus two status tools:
+  `get_run_status` and `list_recent_runs`. A tool call starts the operation's job, waits for it (up to a limit) and
+  returns its JSON result; if the operation is already running, it returns that run instead of starting another.
+- **Least privilege**: the app's only resources are those jobs, with `CAN_MANAGE_RUN`. Only the declared clients
+  (and the agent identity) may call it, with OAuth only.
+
+Operations that change data (`writes: true`) get a `mode` parameter, `validate` by default: a dry run that reports
+what would change. They run for real only when the caller asks for `mode: run`. MAYA adds two built-in operations
+to yours: `table_status` (row counts, last change and freshness of the product's tables) and `quality_checks`
+(runs the G7 check job and returns the failing rules and stale tables).
+
+**Inputs.** An operations file written by the platform team, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G9:
+    app_name: maya-ops-commercial          # 2 to 30 characters
+    operations: ops/operations.yaml        # the platform team's operations; MAYA adds table_status and quality_checks
+    clients:                               # CAN_USE on the app (OAuth only); the agent identity is always included
+      - "${env:MAYA_ENGINEER_GROUP}"
+```
+
+```yaml
+operations:
+  - name: load_landing_files
+    intent: >
+      Load new partner source files from the landing volume through Bronze, Silver and Gold. Use it when someone
+      says a new file has arrived; validate first to see which files would load and whether their columns fit.
+    notebook: ops/load_landing_files.py
+    parameters:
+      - {name: source, type: string, enum: [all, regions, products, customers, orders, shipments, returns], default: all,
+         description: Which source to load}
+    writes: true
+    timeout_minutes: 60
+    settings:                              # fixed job parameters agents cannot change
+      catalog: "{{catalog:solution_builder}}"
+      bronze: maya_bronze
+      foundation_job: maya_example_foundation
+```
+
+Each operation's notebook has a widget per parameter and setting, honours `mode` when it writes, and ends with
+`dbutils.notebook.exit(json.dumps(result))`.
+
+**Run it:**
+
+```bash
+maya run --goal G9
+```
+
+```
+Running G9 Operations MCP server  run=g9-...
+  [code] load
+     3 operations; 0 tool descriptions reused, 3 to write
+  [agent] describe
+     agent describe-0: 22.6s
+     ...
+  [code] plan
+     plan: 3 operation tools + 2 status tools, 2 clients, 0 findings
+  [gate] review
+  [code] apply
+     bundle deployed
+     ran maya_g9_ops_mcp
+     apply: 3 operation jobs and the MCP server app maya-ops-commercial
+  [validator] validate
+     PASS jobs_as_approved: observed 0 (expected == 0)
+     ...
+     PASS server_running: observed 0 (expected == 0)
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G9 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** checks the operations file and each notebook (a widget per parameter, `mode` honoured when it writes).
+2. **describe** runs one `tool_smith` agent per operation. It writes the tool description an agent reads to decide
+   when to call it.
+3. **plan** builds the tool list with each tool's typed parameters and safety rules.
+4. **review** is a gate: security approves `ops_plan.json`, the tools, their parameters and the clients.
+5. **apply** writes `bundle/jobs/G9` (the operation notebooks and the app's source) and `bundle/resources/maya_g9.yml`
+   (the jobs and the app), deploys the bundle and starts the app with `bundle run`.
+6. **validate** calls the deployed server **as the agent identity**. It runs `initialize` and `tools/list`, calls
+   every operation with its defaults, calls one twice while it runs (the second call must return the same run), and
+   calls the status tools. It also checks that an unknown argument is rejected and a personal access token is
+   refused. The results are in `mcp_tests.json`.
+7. **sign_off** is a second gate: security approves the tests.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `jobs_as_approved` | mandatory | Each operation is a job running its notebook with the approved typed parameters, one run at a time, with a timeout |
+| `results_are_json` | mandatory | Every operation, called through the server with its default arguments, succeeds and returns JSON |
+| `tools_listed` | mandatory | The server lists exactly the approved tools with their descriptions and typed inputs, plus the status tools |
+| `safe_by_design` | mandatory | Operations that change data default to a dry run, calls wait a bounded time, a repeated call starts no second run, unknown arguments are rejected |
+| `least_privilege` | mandatory | OAuth only; the app holds `CAN_MANAGE_RUN` on its operation jobs and nothing else; the declared clients may use it |
+| `server_running` | mandatory | The app runs the delivered source |
+| `recent_failures` | advisory | Operation runs that failed in the last 7 days |
+
+**See the result.** Open **Compute** › **Apps** and select *maya-ops-commercial*. The operation jobs are under
+**Jobs & Pipelines** as *MAYA ops - commercial-analytics - ...*. Any MCP client the engineers use can connect to
+`<app url>/mcp` with an OAuth token.
+
+### 18.6 G10 Agents
+
+*Milestone 2 · AI Ready, step 6 of 8.* Architecture of this goal:
+[maya/goals/g10_agents](../maya/goals/g10_agents/README.md).
+
+**What it does.** G10 builds the data product's agents: a supervisor that hands each question to one or more
+sub-agents, each with a small set of tools. It delivers:
+
+- **The agents' code and configuration**: one runtime (`agent.py`) whose whole behaviour (prompts, tool sets,
+  routing) is the approved configuration;
+- **A deploy job** that logs the agents with MLflow, with every resource they use declared, registers them in Unity
+  Catalog (alias `champion`) and serves them on Model Serving through Mosaic AI Agent Framework, with tracing to an
+  MLflow experiment and an inference table;
+- **CAN_QUERY** on the endpoint for the users you declare.
+
+The tools come from the goals already certified: the G8 tool functions, the G5 Genie space, the G9 operations tools
+and the G3 ontology lookup (the supervisor uses it to look business terms up). Data tools act as the **agent
+identity**: the endpoint reads its OAuth credentials from the secret scope, so the agents read exactly what G4 lets
+them read. Every prompt carries MAYA's rules: answer only from the tools' results, never invent or round a figure
+differently, say which tool each figure came from, answer the question's exact scope (a sub-agent whose tools cannot
+apply the question's period or filter gives no figures, and the supervisor hands the question on), and never run an
+operation that changes data unless asked. Every answer returns the trace of the tool calls behind it.
+
+**Inputs.** An agents file written by the product owner, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G10:
+    agents: agents/agents.yaml             # the product owner's agents, their purposes and routing examples
+    endpoint: maya-commercial-agents       # Model Serving endpoint
+    schema: maya_agents                    # registered model: <catalog>.maya_agents.commercial_insights
+    users:                                 # CAN_QUERY on the endpoint
+      - "${env:MAYA_CONSUMER_GROUP}"
+      - "${env:MAYA_ENGINEER_GROUP}"
+```
+
+```yaml
+supervisor:
+  name: commercial_insights
+  purpose: >
+    Answer the commercial team's questions about sales, customers, fulfilment and returns, whether the data can be
+    trusted, and run the data product's operations on request.
+sub_agents:
+  - {name: reporting, purpose: "Governed KPI figures from the agent tools.", tools: [functions]}
+  - {name: genie, purpose: "Ad-hoc questions the reporting tools do not cover.", tools: [genie]}
+  - {name: data_quality, purpose: "Whether the data is fresh and passes its rules.", tools: ["ops:table_status", "ops:quality_checks"]}
+  - {name: operations, purpose: "Load newly arrived files (validate first) and report on runs.",
+     tools: ["ops:load_landing_files", "ops:get_run_status", "ops:list_recent_runs"]}
+routing_examples:
+  - {question: "What was revenue by region in September 2026?", route: [reporting]}
+  - {question: "Which product category had the highest average order value in August 2026?", route: [genie]}
+  - {question: "Is the gold sales data up to date, and are any data quality rules failing?", route: [data_quality]}
+  - {question: "A new orders file arrived in the landing zone. Check what would be loaded, without loading it.", route: [operations]}
+```
+
+Tools are named by reference: `functions` (every G8 tool), `function:<name>`, `lookup`, `genie`, `ops` (every G9
+tool) or `ops:<tool>`. Every sub-agent needs at least one routing example. Optional settings: `llm_endpoint` (default
+`databricks-claude-sonnet-4-6`), `model_name`, `scale_to_zero` (default true), `max_tools_per_agent` (default 8) and
+`max_turns` (default 6).
+
+**Run it:**
+
+```bash
+maya run --goal G10
+```
+
+```
+Running G10 Agents  run=g10-...
+  [code] load
+     4 sub-agents, 12 tools in the catalog; design to write
+  [agent] engineer
+     agent engineer-0: 45.9s
+  [code] plan
+     redesigning ('How has Analytics Edge revenue developed month by month?' went to ['lookup_term', 'ask_genie'], expected ['ask_reporting'])
+     plan: supervisor commercial_insights with 4 sub-agents; dry run 6/6 routed as expected; 0 problems
+  [gate] review
+  [code] apply
+     deployed via bundle: 1 scripts, 1 statements (job run ...)
+     ran job maya_g10_agents (run ...)
+     apply: model solution_builder.maya_agents.commercial_insights version 3; waiting for endpoint maya-commercial-agents
+     endpoint maya-commercial-agents serves version 3
+  [validator] validate
+     PASS routed_as_designed: observed 0 (expected == 0)
+     PASS registered_and_served: observed 0 (expected == 0)
+     PASS grounded_and_traced: observed 0 (expected == 0)
+     PASS access_granted: observed 0 (expected == 0)
+     PASS numbers_in_tool_results: observed 2 (expected >= 0)
+     PASS semantic_routing: observed 0 (expected >= 0)
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G10 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** checks the agents file and builds the tool catalog from what G3, G5, G8 and G9 certified. A sub-agent
+   that names a tool that is not certified stops the run.
+2. **engineer** runs the `agent_engineer` agent once. It writes the supervisor's prompt and, per sub-agent, the
+   routing description the supervisor reads, the prompt and the tool set (every declared tool plus those that fit
+   its purpose, at most `max_tools_per_agent`). It also suggests more routing examples.
+3. **plan** adds MAYA's rules to every prompt and runs every routing example **locally**, with the agents' real
+   tools, as the agent identity. A design that routes an example wrongly goes back to the agent once with the
+   problems (in the example run, the trend question first went to Genie). The plan is `agents_plan.json`, with the
+   dry-run answers.
+4. **review** is a gate: the product owner approves the design.
+5. **apply** writes `bundle/jobs/G10` (the runtime, the deploy script and the configuration) and
+   `bundle/resources/maya_g10.yml` (the deploy job), deploys the bundle and runs the job. MAYA then waits until the
+   endpoint serves the new version (the first deployment takes up to 20 minutes).
+6. **validate** asks the served endpoint every routing example. The answers, routes and traces are in
+   `agent_tests.json`.
+7. **sign_off** is a second gate: the product owner approves the answers.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `routed_as_designed` | mandatory | A supervisor routes to at least two sub-agents with small tool sets, and the served agents route every example as expected |
+| `registered_and_served` | mandatory | Registered in Unity Catalog (alias `champion`) and served at that version with all the traffic, the agent identity's credentials from a secret scope, and every tool declared as a resource |
+| `grounded_and_traced` | mandatory | Every prompt carries MAYA's rules, and every served answer returns the trace of its tool calls |
+| `access_granted` | mandatory | Every declared user may query the endpoint |
+| `numbers_in_tool_results` | advisory | Numbers in served answers that appear in no tool result of that answer (often a rounding or a sum) |
+| `semantic_routing` | advisory | The supervisor can look business terms up in the semantic model before routing |
+
+**See the result.** Open **Serving** and select *maya-commercial-agents*. Use **Use** › **Open in Playground** to ask
+it a question. The traces are in the MLflow experiment `maya_agents_experiment` under the bundle's folder, and the
+requests are in the inference table `solution_builder.maya_agents.commercial_insights_payload`. From code:
+
+```bash
+curl -s -X POST "$DATABRICKS_HOST/serving-endpoints/maya-commercial-agents/invocations" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"input": [{"role": "user", "content": "What was revenue by region in September 2026?"}]}'
+```
+
+The answer's `custom_outputs` hold the routes, the trace of every tool call and the configuration version.
+
+### 18.7 G11 Evaluation
+
+*Milestone 2 · AI Ready, step 7 of 8.* Architecture of this goal:
+[maya/goals/g11_evaluation](../maya/goals/g11_evaluation/README.md).
+
+**What it does.** G11 gives evidence that the AI answers are right, and keep being right. The business owner writes
+the evaluation dataset: business questions, each with the SQL on the governed metric views that gives the right
+answer. It delivers:
+
+- **The dataset and results tables** in `solution_builder.maya_eval`: `eval_dataset` (the approved questions and
+  their truth SQL, with the dataset version), `eval_results` (every answer and the judge's verdict) and `eval_runs`
+  (the pass rates of every run);
+- **A regression job**, `maya_g11_evaluation`, that asks the G10 agents and the G5 Genie space every question, has a
+  language model judge each answer against the rows of the truth SQL, records the results in the tables and in an
+  MLflow run, and fails, notifying the owners, when a pass rate drops below its threshold. It runs again whenever a
+  source table of the metric views changes (or on a schedule you set).
+
+**Inputs.** A questions file written by the business owner, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G11:
+    questions: eval/questions.yaml         # the business owner's questions with truth SQL on the metric views
+    schema: maya_eval                      # dataset and results tables
+    pass_threshold: 0.9                    # share of questions the agents must answer correctly
+    genie_pass_threshold: 0.8              # and the Genie space
+    regression:                            # the job reruns when a source table of the metric views changes
+      notify: ["${env:MAYA_APPROVER}"]     # and tells these owners when a pass rate drops below its threshold
+```
+
+```yaml
+questions:
+  - question: What was revenue by region in July 2026?
+    tags: [revenue, region]
+    sql: |
+      SELECT region, MEASURE(revenue) AS revenue FROM solution_builder.maya_metrics.sales_performance
+      WHERE order_date BETWEEN DATE'2026-07-01' AND DATE'2026-07-31' GROUP BY region
+```
+
+Name the period in every question, and keep the answers short: the truth SQL may read only the metric views and
+their source tables and must return 1 to 50 rows. The example has 22 questions on sales, fulfilment, returns and
+customers. Optional settings: `targets` (default both `agent` and `genie`), `min_questions` (default 20),
+`max_suggestions` (default 5), `judge_endpoint` (default `databricks-claude-sonnet-4-6`) and, under `regression`,
+`schedule` (a Quartz cron that replaces the trigger on change) and `timezone`.
+
+**Run it:**
+
+```bash
+maya run --goal G11
+```
+
+```
+Running G11 Evaluation  run=g11-...
+  [code] load
+     22 questions (0 with problems); suggestions to write
+  [agent] design
+     agent design-0: 37.1s
+  [code] plan
+     plan: 22 questions on ['agent', 'genie']; 0 measures uncovered; 5 suggestions; 0 problems
+  [gate] review
+  [code] apply
+     deployed via bundle: 2 scripts, 4 statements (job run ...)
+     apply: evaluating 22 questions on ['agent', 'genie'] (this takes a while)
+     ran job maya_g11_evaluation (run ...)
+     agent: 22/22 correct (100%, threshold 90%); genie: 22/22 correct (100%, threshold 80%)
+  [validator] validate
+     PASS dataset_ready: observed 0 (expected == 0)
+     PASS agents_accurate: observed 0 (expected == 0)
+     PASS genie_accurate: observed 0 (expected == 0)
+     PASS evaluated_current: observed 0 (expected == 0)
+     PASS regression_armed: observed 0 (expected == 0)
+     PASS tracked_in_mlflow: observed 0 (expected >= 0)
+     PASS measures_covered: observed 0 (expected >= 0)
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G11 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** reads the questions file and runs every truth SQL. A question whose SQL fails, reads other tables or
+   returns no rows (or more than 50) is a problem the business owner fixes.
+2. **design** runs the `eval_designer` agent once. It proposes more questions, with truth SQL, for the measures and
+   dimensions the dataset does not cover yet. MAYA checks them the same way; they are suggestions for the business
+   owner, not part of the dataset.
+3. **plan** writes `eval_plan.json`: the dataset with its version, the measures no question covers and the
+   suggestions.
+4. **review** is a gate: the business owner approves the dataset.
+5. **apply** writes `bundle/scripts/G11` (the schema and the three tables), `bundle/jobs/G11` (the evaluation
+   script and its configuration) and `bundle/resources/maya_g11.yml` (the regression job), deploys the bundle and
+   runs the job once.
+6. **validate** reads that run's pass rates and answers from `eval_runs` and `eval_results`; they are in
+   `eval_results.json`.
+7. **sign_off** is a second gate: the business owner approves the results.
+
+**What the first run found.** The first evaluation failed: the agents answered 17 of 22 questions correctly (77%,
+below 90%). Four misses were return questions for one month or quarter. The return-reason tool covers all periods,
+so the agent either refused or gave all-time figures. The fifth gave the lowest month's fill rate for a quarter. The
+fix went into G10: every prompt now requires the question's exact scope, and the agents file says what the
+return-reason tool cannot filter and that Genie answers such questions. G10 was re-run and certified with version 7,
+and G11 then passed with 22 of 22. This is what G11 is for: a change to the agents, the data or the Genie space shows
+up as a failing regression run, not as a wrong answer in front of a user.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `dataset_ready` | mandatory | At least `min_questions` questions, each with truth SQL that runs on the governed metric views, stored in Unity Catalog at the approved version |
+| `agents_accurate` | mandatory | The served agents answer at least `pass_threshold` of the questions correctly (observed: how many more correct answers they need) |
+| `genie_accurate` | mandatory | The Genie space answers at least `genie_pass_threshold` of the questions correctly |
+| `evaluated_current` | mandatory | The recorded run evaluated the approved dataset against the agents certified now |
+| `regression_armed` | mandatory | The regression job reruns the evaluation on change (or on a schedule) and notifies the owners when it fails |
+| `tracked_in_mlflow` | advisory | The evaluation run is in MLflow with its pass rates |
+| `measures_covered` | advisory | Measures of the metric views that no question asks about |
+
+G11 becomes stale when the questions change, when G10 certifies a new agent version, or when the latest regression
+run fails.
+
+**See the result.** Query the pass rates of every run:
+
+```sql
+SELECT * FROM solution_builder.maya_eval.eval_runs ORDER BY run_at DESC;
+```
+
+and the answers the judge rejected in `solution_builder.maya_eval.eval_results` (`correct = false`). The runs, with
+their pass rates, are also in the MLflow experiment `maya_evaluation_experiment` under the bundle's folder. In
+**Jobs & Pipelines**, *maya_g11_evaluation* shows its trigger on the source tables (paused in the `dev` target).
+
+### 18.8 G12 Operations and documentation
+
+*Milestone 2 · AI Ready, step 8 of 8.* Architecture of this goal:
+[maya/goals/g12_operations](../maya/goals/g12_operations/README.md).
+
+**What it does.** G12 makes the data product run without its builders and documents it for its users and operators.
+It checks and delivers:
+
+- **Operable production jobs.** Every job that feeds the product (the jobs MAYA delivered with a trigger, such as
+  the G7 quality job and the G11 regression job, plus the jobs you declare) must have a schedule or trigger, retries
+  on every task (at least `min_retries`), a timeout and an email to the owners when it fails. MAYA checks the jobs
+  you declare but never changes them: you fix them where they are defined.
+- **A monitoring dashboard**, *Commercial analytics operations*: evaluation pass rates per run, the questions the
+  latest evaluation answered wrongly, failing data quality rules, freshness of the Gold tables, production job runs
+  over 30 days (from the system tables), and agent requests and response times (from the G10 inference table).
+- **Documentation**, written by the `tech_writer` agent from facts MAYA collects from the certified goals: a runbook
+  per production job, for the agents endpoint and for the operations app (what it does, schedule, when it fails,
+  rerun, escalation), a product document (overview, data, metrics, AI access, quality and evaluation, owners and
+  support) and an onboarding page (get access, ask questions, dashboards, get help). The bundle delivers them to the
+  workspace under `jobs/G12/docs`, with an index `README.md`.
+
+**Inputs.** A block in `maya.yaml`:
+
+```yaml
+goals:
+  G12:
+    notify: ["${env:MAYA_APPROVER}"]       # every production job notifies these owners when it fails
+    production_jobs: [maya_example_foundation]   # jobs outside MAYA that feed the product (checked, never changed)
+    min_retries: 1
+    dashboard:
+      title: Commercial analytics operations
+      viewers: ["${env:MAYA_ENGINEER_GROUP}"]
+    support: the data products team (see metadata.owner)
+```
+
+Optional settings: `dashboard.parent_path` (default `MAYA`), `docs.audience` and `model` (the tech_writer's model).
+
+The example's foundation job was created before G12 without retries or notifications. Its deploy script
+(`foundation/deploy_foundation.py`) now sets two retries per task, a two-hour timeout and, with `--notify <email>`,
+an email on failure. Run it once with `--no-run` to update the job without loading data:
+
+```bash
+python foundation/deploy_foundation.py --profile "$DATABRICKS_CONFIG_PROFILE" --warehouse "$MAYA_WAREHOUSE_ID" \
+  --notify "$MAYA_APPROVER" --no-run
+```
+
+**Run it:**
+
+```bash
+maya run --goal G12
+```
+
+```
+Running G12 Operations and documentation  run=g12-...
+  [code] load
+     3 production jobs, 7 documents to write
+  [agent] write
+     agent write-1: 34.2s
+     ...
+     agent write-5: 51.9s
+  [code] plan
+     plan: 7 documents (0 with problems); 3 production jobs, 0 not operable; monitoring dashboard with 7 datasets
+  [gate] review
+  [code] apply
+     deployed via bundle: 1 scripts, 1 statements (job run ...)
+     apply: dashboard 'Commercial analytics operations', 7 documents
+  [validator] validate
+     PASS jobs_operable: observed 0 (expected == 0)
+     PASS monitored: observed 0 (expected == 0)
+     PASS runbooks: observed 0 (expected == 0)
+     PASS documented: observed 0 (expected == 0)
+     PASS onboarding: observed 0 (expected == 0)
+     PASS recent_failures: observed 1 (expected >= 0)
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G12 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** finds the production jobs and checks each one, collects the facts for every document (tables, metric
+   views, Genie space, dashboards, quality rules, evaluation pass rates, endpoint, jobs and their triggers, owners)
+   and lists the documents to write.
+2. **write** runs the `tech_writer` agent once per document, four at a time.
+3. **plan** checks every document (its required sections, the facts it must mention, its length) and asks the agent
+   once more for any that falls short. It also builds the dashboard. The plan is `operations_plan.json`.
+4. **review** is a gate: the platform owner approves the documents, the dashboard and the job findings.
+5. **apply** writes `bundle/scripts/G12/10_dashboard` (the dashboard) and `bundle/jobs/G12/docs` (the documents),
+   deploys the bundle and publishes the dashboard.
+6. **validate** reads the jobs, the published dashboard (running every query) and the documents in the workspace;
+   the findings are in `operations_review.json`.
+7. **sign_off** is a second gate: the platform owner approves.
+
+In the example run, `recent_failures` reports one job: the G11 regression job, whose first run failed in section
+18.7. It is advisory: it tells the operators, it does not stop certification.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `jobs_operable` | mandatory | Every production job runs on its own, retries failed tasks and notifies the owners when it fails |
+| `monitored` | mandatory | The monitoring dashboard is published with every query running, and the agents endpoint records an inference table |
+| `runbooks` | mandatory | A runbook for every production job and served component, in the workspace |
+| `documented` | mandatory | The product documentation covers data, metrics, AI access, quality, evaluation and owners |
+| `onboarding` | mandatory | The onboarding page tells a new user how to get access, ask questions and get help |
+| `recent_failures` | advisory | Production jobs whose recent runs failed |
+
+G12 becomes stale when the facts behind the documents change (a new goal version, job or owner) or when its inputs
+change, and its next run writes the documents again from the new facts.
+
+**See the result.** Open **Dashboards** › *MAYA* › *Commercial analytics operations*. The documents are in the
+workspace under the bundle's folder, `files/jobs/G12/docs`: start with `README.md`, which links the product
+document, the onboarding page and the runbooks.
+
+### 18.9 AI Ready reached
+
+With G12 certified, every goal is certified:
+
+```bash
+maya status
+```
+
+```
+  G0   Foundation intake                  certified          checks 7/7
+  G1   Metadata                           certified          checks 9/9
+  G2   Metric views                       certified          checks 6/6
+  G3   Semantic model                     certified          checks 8/8
+  G4   Governance and access              certified          checks 13/13
+  G5   Genie space                        certified          checks 11/11
+  G6   AI/BI dashboards                   certified          checks 12/12
+  G7   Data quality monitoring            certified          checks 12/12
+  G8   Agent tools                        certified          checks 7/7
+  G9   Operations MCP server              certified          checks 7/7
+  G10  Agents                             certified          checks 6/6
+  G11  Evaluation                         certified          checks 7/7
+  G12  Operations and documentation       certified          checks 6/6
+
+  milestone AI Enabled: reached
+  milestone AI Ready: reached
+
+Next actions:
+  - nothing pending
+```
+
+**AI Ready = AI Enabled plus G5 to G12 certified.** The data product now has a Genie space and dashboards for
+people, monitored quality, governed tools and operations for agents, served agents whose answers are evaluated
+against SQL truth on every change, and the runbooks, monitoring and documentation to run it without its builders.
+
+Certifications last 90 days. A goal goes stale before that when what it certified changes: new tables or columns,
+a changed metric view, a new agent version, a failing regression run. `maya status` names it, and `maya run`
+(without `--goal`) runs the next goal that is ready or stale. Everything MAYA delivered is in the project's Asset
+Bundle (`bundle/`); promote it to your other environments with your CI/CD.
 
 ---
 
@@ -1629,6 +2283,10 @@ python deploy_foundation.py --profile "$DATABRICKS_CONFIG_PROFILE" --warehouse "
 Then remove what MAYA created:
 
 ```sql
+DROP SCHEMA IF EXISTS solution_builder.maya_eval CASCADE;
+DROP SCHEMA IF EXISTS solution_builder.maya_agents CASCADE;
+DROP SCHEMA IF EXISTS solution_builder.maya_tools CASCADE;
+DROP SCHEMA IF EXISTS solution_builder.maya_quality CASCADE;
 DROP SCHEMA IF EXISTS solution_builder.maya_governance CASCADE;
 DROP SCHEMA IF EXISTS solution_builder.maya_semantic CASCADE;
 DROP SCHEMA IF EXISTS solution_builder.maya_metrics CASCADE;
@@ -1637,5 +2295,8 @@ DROP SCHEMA IF EXISTS solution_builder.maya_state_commercial_analytics CASCADE;
 DROP SCHEMA IF EXISTS solution_builder.maya_registry CASCADE;
 ```
 
-Then remove the deployed bundle (`databricks bundle destroy -p <profile>` in `examples/commercial_analytics/bundle`),
-the project dashboard and, locally, the generated `bundle/`, `.maya/` and `reports/` folders.
+Then remove the deployed bundle (`databricks bundle destroy -p <profile>` in `examples/commercial_analytics/bundle`;
+it removes the jobs and the operations app), the agents endpoint, which the G10 deploy job created
+(`databricks serving-endpoints delete maya-commercial-agents -p <profile>`), the Genie space and the dashboards the
+bundle scripts created (G6, G7 and G12, under *MAYA*), the project dashboard and, locally, the generated `bundle/`,
+`.maya/` and `reports/` folders.

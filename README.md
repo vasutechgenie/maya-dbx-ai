@@ -1,8 +1,7 @@
 # MAYA Databricks AI Accelerator
 
 A goal engine that takes an existing Bronze/Silver/Gold data foundation and makes it **AI Enabled** (milestone 1,
-goals G0 to G4, available now) and then **AI Ready** (milestone 2, goals G5 to G12; G5 to G7 are available now,
-G8 to G12 will be released later).
+goals G0 to G4) and then **AI Ready** (milestone 2, goals G5 to G12). Every goal is available.
 Each goal is declared in YAML, runs as a graph harness (deterministic steps, agents, validated gates), is checked
 by its own validator and is certified. Every deliverable is a script delivered through the project's Databricks
 Asset Bundle; promotion between environments is left to your CI/CD.
@@ -58,7 +57,7 @@ The data foundation is described, measured, modelled and governed. **AI Enabled 
 `maya status` reports the milestone (`milestone AI Enabled: reached`) once G0 to G4 are certified. Each goal's
 page shows its architecture: inputs, harness graph, outputs and checks.
 
-### Milestone 2 · AI Ready (G5 to G7 available now; G8 to G12 will be released later)
+### Milestone 2 · AI Ready (G5 to G12)
 
 On top of AI Enabled, the data product is usable by people and agents. **AI Ready = AI Enabled plus G5 to G12
 certified.** Every AI Ready goal also requires AI Enabled.
@@ -68,14 +67,13 @@ certified.** Every AI Ready goal also requires AI Enabled.
 | [G5 Genie space](maya/goals/g05_genie_space/README.md) | A Genie space over metric views and Gold that answers business questions correctly. | G2, G3 | Business owner | AR-1.1 to AR-1.4 |
 | [G6 AI/BI dashboards](maya/goals/g06_dashboards/README.md) | One dashboard page per semantic page, built only on metric views, published and scheduled. | G2, G3 | Business owner | AR-2.1 to AR-2.3 |
 | [G7 Data quality monitoring](maya/goals/g07_data_quality/README.md) | Rules checked on a schedule, a data quality dashboard, and alerts that fire on critical failures and stale data. | G1 | Data owner | AR-2.4, AR-7.2 |
-| G8 Agent tools (UC functions) | Reusable business actions as self-describing Unity Catalog functions agents can call. | G2, G3 | Security | AR-3.1 to AR-3.4 |
-| G9 Operations MCP server | Operational notebooks run as parameterised jobs that agents call through an MCP server. | G4, G7 | Security | AR-4.1 to AR-4.4 |
-| G10 Agents | A supervisor with capability-scoped sub-agents, deployed and traced. | G5, G8, G9 | Product owner | AR-5.1 to AR-5.4 |
-| G11 Evaluation | Agent and Genie answers verified against SQL truth, with regression on change. | G10 | Business owner | AR-6.1 to AR-6.3 |
-| G12 Operations and documentation | The system is operable and documented for its consumers. | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
+| [G8 Agent tools (UC functions)](maya/goals/g08_agent_tools/README.md) | Reusable business actions as self-describing Unity Catalog functions agents can call. | G2, G3 | Security | AR-3.1 to AR-3.4 |
+| [G9 Operations MCP server](maya/goals/g09_ops_mcp/README.md) | Operational notebooks run as parameterised jobs that agents call through an MCP server. | G4, G7 | Security | AR-4.1 to AR-4.4 |
+| [G10 Agents](maya/goals/g10_agents/README.md) | A supervisor with capability-scoped sub-agents, deployed and traced. | G5, G8, G9 | Product owner | AR-5.1 to AR-5.4 |
+| [G11 Evaluation](maya/goals/g11_evaluation/README.md) | Agent and Genie answers verified against SQL truth, with regression on change. | G10 | Business owner | AR-6.1 to AR-6.3 |
+| [G12 Operations and documentation](maya/goals/g12_operations/README.md) | The system is operable and documented for its consumers. | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
 
-G8 to G12 are not in this release; they will be released later. Until they are, `maya status` reports
-`milestone AI Ready: not yet` and names the goals still to be released.
+`maya status` reports the milestone (`milestone AI Ready: reached`) once AI Enabled and G5 to G12 are certified.
 
 ## How it works
 

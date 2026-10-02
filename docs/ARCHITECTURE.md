@@ -1,8 +1,7 @@
 # MAYA architecture
 
 MAYA is a goal engine. It takes an existing Bronze / Silver / Gold foundation in Unity Catalog and works through a chain
-of goals until the data product is **AI Enabled** (goals G0 to G4, available now) and then **AI Ready** (goals G5 to G12;
-G5 to G7 are available now, G8 to G12 will be released later). This page shows how the pieces fit together; each goal's own page shows its internals:
+of goals until the data product is **AI Enabled** (goals G0 to G4) and then **AI Ready** (goals G5 to G12). This page shows how the pieces fit together; each goal's own page shows its internals:
 
 | Goal | Architecture |
 |------|--------------|
@@ -14,6 +13,11 @@ G5 to G7 are available now, G8 to G12 will be released later). This page shows h
 | G5 Genie space | [maya/goals/g05_genie_space](../maya/goals/g05_genie_space/README.md) |
 | G6 AI/BI dashboards | [maya/goals/g06_dashboards](../maya/goals/g06_dashboards/README.md) |
 | G7 Data quality monitoring | [maya/goals/g07_data_quality](../maya/goals/g07_data_quality/README.md) |
+| G8 Agent tools | [maya/goals/g08_agent_tools](../maya/goals/g08_agent_tools/README.md) |
+| G9 Operations MCP server | [maya/goals/g09_ops_mcp](../maya/goals/g09_ops_mcp/README.md) |
+| G10 Agents | [maya/goals/g10_agents](../maya/goals/g10_agents/README.md) |
+| G11 Evaluation | [maya/goals/g11_evaluation](../maya/goals/g11_evaluation/README.md) |
+| G12 Operations and documentation | [maya/goals/g12_operations](../maya/goals/g12_operations/README.md) |
 
 ## 1. Overall architecture
 
@@ -92,7 +96,7 @@ flowchart LR
         G1 --> G4["G4 Governance and access"]
         G2 --> G4
     end
-    subgraph AR["Milestone 2 · AI Ready (G5 to G7 available, G8 to G12 later; every goal also requires AI Enabled)"]
+    subgraph AR["Milestone 2 · AI Ready (every goal also requires AI Enabled)"]
         G5["G5 Genie space"]
         G6["G6 AI/BI dashboards"]
         G7["G7 DQ monitoring"]

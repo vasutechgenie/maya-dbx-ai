@@ -9,8 +9,9 @@ If you want to try MAYA first on synthetic data, do the [example tutorial](TUTOR
 foundation and runs the same goals; this tutorial does not repeat its explanations of each check, so keep it at hand
 as a reference.
 
-The AI Enabled goals G0 to G4 are available now, and so are the AI Ready goals G5 Genie space (section 17), G6
-AI/BI dashboards (section 18) and G7 data quality monitoring (section 19). G8 to G12 will be released later.
+After the AI Enabled goals G0 to G4, it runs the AI Ready goals: G5 Genie space (section 17), G6 AI/BI dashboards
+(section 18), G7 data quality monitoring (section 19), G8 agent tools (section 20), G9 operations MCP server
+(section 21), G10 agents (section 22), G11 evaluation (section 23) and G12 operations and documentation (section 24).
 
 Contents
 
@@ -898,3 +899,118 @@ Commit `quality/`, `maya.yaml` and `bundle/`. CI/CD deploys the same quality sch
 to test and production (`bundle/scripts/G7`, `bundle/jobs/G7` and `bundle/resources/maya_g7.yml`, with catalogs
 replaced per target). Production targets run the job on its schedule; development targets deploy it paused.
 
+
+---
+
+## 20. Next: G8 agent tools on your data product
+
+G8 turns the business actions your agents may call into Unity Catalog SQL table functions, tested as the agent
+identity and served by the workspace's managed MCP server. The example tutorial
+([section 18.4](TUTORIAL.md#184-g8-agent-tools)) explains every step and check. On your own data:
+
+1. **Get the agent identity from security first.** One service principal for every agent, MCP client and tool test,
+   with an OAuth secret (keys `client_id`, `client_secret`) in a secret scope you can read. Give it a G4 role that
+   reads what a consumer reads (`consumer: true`, Gold, metric views, the semantic model), run G4 again, and declare
+   it under `agent_identity` in `maya.yaml`.
+2. **List the questions agents must answer with exact figures.** Each becomes a tool in `tools/tools.yaml`: an intent
+   in business words, typed parameters with descriptions, and two or three example calls. Give at least one example
+   per tool a `matches` query that computes the same numbers independently (from Gold rather than the metric view),
+   so the test proves the figures, not only the shape.
+3. **Decide who else may run the tools** (`executors`): usually your consumer and engineer groups.
+4. **Run it**: `maya validate`, then `maya run --goal G8`. Security reviews every function's SQL and descriptions
+   before they are deployed, and the test results (run as the agent identity) before certification.
+5. **If a test fails as the agent identity but passes for you**, the identity lacks a grant or sees masked values:
+   fix its G4 role rather than the tool.
+
+Commit `tools/`, `maya.yaml` and `bundle/`. CI/CD deploys the same functions and grants to every target
+(`bundle/scripts/G8`, catalogs replaced per target); each target's managed MCP server serves them at once.
+
+---
+
+## 21. Next: G9 operations MCP server on your data product
+
+G9 serves the operations your platform team allows agents to start (as jobs) through a custom MCP server deployed as
+a Databricks App. The example tutorial ([section 18.5](TUTORIAL.md#185-g9-operations-mcp-server)) explains every step
+and check. On your own data:
+
+1. **Pick few, safe operations.** Good first candidates: reload a source, rerun a failed layer, refresh a table's
+   statistics. MAYA adds `table_status` and `quality_checks`. Leave anything destructive out.
+2. **Write each operation's notebook** with a widget per parameter and setting. If it changes data, declare
+   `writes: true` and implement `mode`: `validate` reports what would change and changes nothing, `run` does it. End
+   with `dbutils.notebook.exit(json.dumps(result))`. Put fixed values (catalogs, schemas, job names) under
+   `settings`, so agents cannot change them; `{{catalog:<dev name>}}` follows the bundle target.
+3. **Add the `goals.G9` block** to `maya.yaml`: an app name (2 to 30 characters, unique in the workspace), the
+   operations file and the clients that may call the server.
+4. **Run it**: `maya validate`, then `maya run --goal G9`. Security reviews the tools and clients, then the MCP tests
+   run through the deployed server as the agent identity.
+
+Commit `ops/`, `maya.yaml` and `bundle/`. CI/CD deploys the jobs and the app to every target; the app's only
+permission is to run its own jobs there.
+
+---
+
+## 22. Next: G10 agents on your data product
+
+G10 builds a supervisor with sub-agents on the tools you certified, registers it in Unity Catalog and serves it. The
+example tutorial ([section 18.6](TUTORIAL.md#186-g10-agents)) explains every step and check. On your own data:
+
+1. **Split by capability, not by table.** Typical sub-agents: governed figures (the G8 tools), ad-hoc questions (the
+   Genie space), data health (table status and quality checks), operations. Keep each tool set small; the agent
+   adds the catalog's tools that fit a sub-agent's purpose.
+2. **Write routing examples from real questions**, at least one per sub-agent, including the ones that are easy to
+   route wrongly (a trend that the reporting tools answer, not Genie). MAYA checks every one locally before
+   deploying and again on the served endpoint.
+3. **Add the `goals.G10` block** to `maya.yaml`: the agents file, the endpoint name, the schema of the registered
+   model and the users. The agent identity's secret scope must be readable by whoever deploys (the endpoint reads
+   the credentials as its creator).
+4. **Run it**: `maya validate`, then `maya run --goal G10`. The product owner reviews the design with the dry-run
+   answers, then the served answers. The first deployment of an endpoint takes up to 20 minutes.
+5. **When an answer is wrong**, check its trace in `agent_tests.json`: a wrong route means a routing description or
+   example to sharpen (change `agents/agents.yaml`); a wrong figure means a tool to fix in G8.
+
+Commit `agents/`, `maya.yaml` and `bundle/`. CI/CD runs the deploy job per target, so each target registers and
+serves its own version.
+
+---
+
+## 23. Next: G11 evaluation on your data product
+
+G11 evaluates the served agents and the Genie space against business questions with known answers, and keeps
+evaluating them. The example tutorial ([section 18.7](TUTORIAL.md#187-g11-evaluation)) explains every step and
+check. On your own data:
+
+1. **Ask the business owner for twenty or more questions with known answers**, the ones users would notice if they
+   were wrong. Write each with the SQL on your metric views that gives the answer, naming the period with dates, in
+   `eval/questions.yaml`. Keep answers short (one figure, a top item, a handful of rows).
+2. **Cover every measure.** The plan lists measures no question asks about and the `eval_designer` agent's suggested
+   questions; copy the good ones into the questions file.
+3. **Set the thresholds and who hears about a regression** in `goals.G11`: `pass_threshold` for the agents (0.9),
+   `genie_pass_threshold` (start at 0.8), and `regression.notify`. The regression job reruns when a source table of
+   your metric views changes (or on `regression.schedule`).
+4. **Run it**: `maya validate`, then `maya run --goal G11`. The evaluation takes a few minutes: every question is
+   asked of the agents and of Genie, and a language model judges each answer against the truth rows.
+5. **When the pass rate is too low**, read the failing questions in `eval_results.json` or in the `eval_results`
+   table: fix the agents (G10), Genie's instructions (G5), or a question whose truth SQL does not match its wording.
+
+Commit `eval/`, `maya.yaml` and `bundle/`. Production targets run the regression job on change; development targets
+deploy it paused.
+
+---
+
+## 24. Next: G12 operations and documentation on your data product
+
+G12 checks that your production jobs run on their own, delivers a monitoring dashboard and writes the product's
+documentation from what the goals certified. The example tutorial
+([section 18.8](TUTORIAL.md#188-g12-operations-and-documentation)) explains every step and check. On your own data:
+
+1. **Declare the jobs that feed the product** (`production_jobs`): your ingestion and layer jobs, which MAYA checks
+   but never changes. Each needs a schedule or trigger, retries on every task (`min_retries`) and a failure
+   notification to the owners in `notify`. Fix what the review lists in the team's own job definitions.
+2. **Name the operators** who may view the monitoring dashboard (`dashboard.viewers`) and where users get help
+   (`support`).
+3. **Run it**: `maya validate`, then `maya run --goal G12`. The platform owner reviews the documents (product
+   documentation, onboarding page, one runbook per production job and served component) and the dashboard.
+4. **Keep the documents true.** They are written from the certified state; when a goal changes, G12 becomes stale
+   and its next run writes the documents again from the new facts.
+
+Commit `maya.yaml` and `bundle/`. CI/CD deploys the dashboard and the documents to every target.
