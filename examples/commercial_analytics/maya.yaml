@@ -100,6 +100,7 @@ goals:
     access:                                # who may ask questions; their data access comes from G4
       - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
       - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+      - {service_principal: "${env:MAYA_AGENT_SP}", level: CAN_RUN}   # the agents' genie sub-agent (G10)
   G6:                                      # AI Ready: one dashboard page per semantic page, on the metric views
     title: Commercial analytics dashboard
     content: dashboards/pages.yaml         # audience, KPIs and filters each page must show
@@ -124,6 +125,11 @@ goals:
     tools: tools/tools.yaml                # the product owner's tools, example calls and expected results
     executors:                             # USE SCHEMA and EXECUTE; the agent identity is always included
       - "${env:MAYA_CONSUMER_GROUP}"
+      - "${env:MAYA_ENGINEER_GROUP}"
+  G9:                                      # AI Ready: operations agents may run, as tools of an MCP server (a Databricks App)
+    app_name: maya-ops-commercial          # 2 to 30 characters
+    operations: ops/operations.yaml        # the platform team's operations; MAYA adds table_status and quality_checks
+    clients:                               # CAN_USE on the app (OAuth only); the agent identity is always included
       - "${env:MAYA_ENGINEER_GROUP}"
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf

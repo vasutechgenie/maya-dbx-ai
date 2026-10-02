@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "tool_name", "description", "parameters"],
+  "properties": {
+    "operation": {"type": "string"},
+    "tool_name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,40}$"},
+    "description": {"type": "string", "minLength": 60, "maxLength": 1500},
+    "parameters": {
+      "type": "array", "maxItems": 12,
+      "items": {"type": "object", "additionalProperties": false, "required": ["name", "description"],
+                "properties": {"name": {"type": "string"}, "description": {"type": "string", "minLength": 5, "maxLength": 500}}}
+    }
+  }
+}

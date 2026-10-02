@@ -279,9 +279,9 @@ def run_resource(ctx, key: str) -> str:
     return out
 
 
-def run_job(ctx, job_key: str, deploy=True) -> dict:
+def run_job(ctx, job_key: str, deploy=True, raise_on_failure=True) -> dict:
     """Run one of the goal's own bundle jobs and wait for it (bundle run blocks until it ends); deploy=True deploys
-    the bundle first."""
+    the bundle first. raise_on_failure=False returns the result of a failed run (ok False) instead of raising."""
     r = ensure(ctx.system, ctx.ws)
     t = target(ctx.system)
     if deploy:
@@ -299,7 +299,7 @@ def run_job(ctx, job_key: str, deploy=True) -> dict:
             tasks[task.task_key] = json.loads(line[len(RESULT):]) if line else {"ok": False, "error": o.error}
     res = {"job": job_key, "job_run_id": run_id, "ok": code == 0 and all(v.get("ok") for v in tasks.values()),
            "tasks": tasks, "at": datetime.now(timezone.utc).isoformat()}
-    if not res["ok"]:
+    if not res["ok"] and (raise_on_failure or not tasks):
         failed = next((v for v in tasks.values() if not v.get("ok")), {})
         raise DeployError(f"job {job_key} failed (run {run_id}): {failed.get('failed')} statement "
                           f"{failed.get('statement')}: {failed.get('error') or out[-1500:]}")
@@ -307,13 +307,18 @@ def run_job(ctx, job_key: str, deploy=True) -> dict:
     return res
 
 
-def resources(system, ws) -> dict:
-    """The bundle's deployed resources ({kind: {key: {id, name, url, ...}}}) as `bundle summary` reports them."""
+def summary(system, ws) -> dict:
+    """`bundle summary` of the target: its workspace paths and deployed resources."""
     r = ensure(system, ws)
     code, out = _cli(system, ["bundle", "summary", "-t", target(system), "-o", "json"], r)
     if code or "{" not in out:
         return {}
-    return json.loads(out[out.index("{"):]).get("resources") or {}
+    return json.loads(out[out.index("{"):])
+
+
+def resources(system, ws) -> dict:
+    """The bundle's deployed resources ({kind: {key: {id, name, url, ...}}}) as `bundle summary` reports them."""
+    return summary(system, ws).get("resources") or {}
 
 
 def _task_result(ws, run_id, key) -> dict:

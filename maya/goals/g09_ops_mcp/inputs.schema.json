@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "G9 Operations MCP server inputs",
+  "type": "object",
+  "required": ["app_name"],
+  "additionalProperties": false,
+  "properties": {
+    "app_name": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,29}$",
+                 "description": "Name of the Databricks App that serves the operations MCP server (2 to 30 characters)"},
+    "operations": {"type": "string", "description": "YAML file (relative to maya.yaml) of the customer's operations: see $defs.operations_file"},
+    "builtins": {
+      "type": "array", "items": {"enum": ["table_status", "quality_checks"]},
+      "description": "MAYA's operations to include (default: table_status, and quality_checks when G7 is configured)"
+    },
+    "clients": {
+      "type": "array", "items": {"$ref": "#/$defs/principal"},
+      "description": "Who may call the server (CAN_USE on the app). The agent identity (maya.yaml agent_identity) is always included"
+    },
+    "max_wait_seconds": {"type": "integer", "minimum": 10, "maximum": 280, "default": 280,
+                         "description": "Longest a tool call waits for its run before returning the run id"},
+    "model": {"type": "string", "description": "AI Gateway model for tool_smith (default: maya.yaml ai_gateway.model)"}
+  },
+  "$defs": {
+    "principal": {"type": "string", "minLength": 1, "description": "Account group name, user e-mail or service principal application id"},
+    "operations_file": {
+      "type": "object", "additionalProperties": false, "required": ["operations"],
+      "properties": {"operations": {"type": "array", "items": {"$ref": "#/$defs/operation"}}}
+    },
+    "operation": {
+      "type": "object", "additionalProperties": false, "required": ["name", "intent", "notebook"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,40}$"},
+        "intent": {"type": "string", "minLength": 10, "maxLength": 800},
+        "notebook": {"type": "string", "description": "Notebook source file (relative to maya.yaml)"},
+        "parameters": {"type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/parameter"}},
+        "writes": {"type": "boolean", "default": false,
+                   "description": "Changes data: MAYA adds a 'mode' parameter (validate | run, default validate) the notebook must honour"},
+        "timeout_minutes": {"type": "integer", "minimum": 1, "maximum": 720, "default": 60},
+        "settings": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]},
+                     "description": "Fixed job parameters agents cannot change"}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false, "required": ["name", "type", "description"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,40}$", "not": {"enum": ["mode", "wait_seconds", "config"]}},
+        "type": {"enum": ["string", "integer", "number", "boolean"]},
+        "description": {"type": "string", "minLength": 3},
+        "enum": {"type": "array", "minItems": 1, "items": {"type": ["string", "number"]}},
+        "default": {"type": ["string", "number", "boolean"]},
+        "minimum": {"type": "number"},
+        "maximum": {"type": "number"}
+      }
+    }
+  }
+}

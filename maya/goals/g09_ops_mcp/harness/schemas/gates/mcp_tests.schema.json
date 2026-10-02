@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["tested_at", "tests"],
+  "properties": {
+    "tested_at": {"type": "string"},
+    "url": {"type": ["string", "null"]},
+    "tests": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["test", "passed"], "properties": {"passed": {"type": "boolean"}}}
+    }
+  }
+}

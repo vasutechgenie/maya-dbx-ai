@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: operations.load}
+  describe:
+    type: agent
+    agent: tool_smith
+    task: write the MCP tool name, description and parameter descriptions of one operation
+    for_each: load.describe_operations
+    input: operations.describe_input
+    schema: harness/schemas/tool_description.schema.json
+    output: tool_descriptions.json
+    concurrency: 4
+  plan:       {type: code, run: operations.plan}
+  review:
+    type: gate
+    approver: security
+    items:
+      ops_plan.json: {schema: harness/schemas/gates/ops_plan.schema.json, check: gate_checks.ops_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: security
+    items:
+      mcp_tests.json: {schema: harness/schemas/gates/mcp_tests.schema.json, check: gate_checks.mcp_tests}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> describe -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

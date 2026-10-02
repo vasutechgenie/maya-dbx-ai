@@ -1,0 +1,27 @@
+# G9 input: the operations agents may run, chosen by the platform team (CR-AR-4.1). Each becomes a job and a tool
+# of the operations MCP server; MAYA adds its built-in operations (table_status, quality_checks) to these.
+#
+# Per operation:
+#   name        lowercase operation name
+#   intent      what it does and when to use it (the tool_smith agent writes the tool description from it)
+#   notebook    the notebook (relative to maya.yaml): a widget per parameter, returns JSON with dbutils.notebook.exit
+#   parameters  name, type (string, integer, number, boolean), description, optional enum and default
+#   writes      true when it changes data: MAYA adds a 'mode' parameter (validate | run, default validate) that the
+#               notebook must honour - validate is a dry run that changes nothing
+#   settings    fixed job parameters agents cannot change ({{catalog:<dev name>}} follows the bundle target)
+operations:
+  - name: load_landing_files
+    intent: >
+      Load new partner source files (regions, products, customers, orders, shipments, returns) from the landing volume
+      through Bronze, Silver and Gold. Use it when someone says a new file has arrived; validate first to see which
+      files would load and whether their columns fit.
+    notebook: ops/load_landing_files.py
+    parameters:
+      - {name: source, type: string, enum: [all, regions, products, customers, orders, shipments, returns], default: all,
+         description: Which source to load}
+    writes: true
+    timeout_minutes: 60
+    settings:
+      catalog: "{{catalog:solution_builder}}"
+      bronze: maya_bronze
+      foundation_job: maya_example_foundation

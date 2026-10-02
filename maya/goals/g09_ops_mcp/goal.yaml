@@ -1,0 +1,46 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G9
+  name: ops_mcp
+  title: Operations MCP server
+  milestone: AI Ready
+  description: >
+    The operations agents may run, published as tools of an MCP server. Each operation is a notebook run as a job
+    with typed parameters that returns JSON: MAYA's built-in ones (table status, data quality checks) and the
+    customer's (for example loading new source files). Operations that change data take mode=validate, a dry run,
+    unless asked to run. The tool_smith agent writes each tool's name and description, security approves the plan,
+    and the bundle delivers the jobs and the server, a Databricks App that accepts OAuth only and whose service
+    principal may run exactly those jobs. MAYA then calls every tool as the agent identity and certifies once security
+    signs off.
+spec:
+  prerequisites: [G4, G7]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: ops_plan.json, kind: artefact}
+    - {name: mcp_tests.json, kind: artefact}
+    - {name: ops_jobs, kind: workspace}
+    - {name: ops_mcp_app, kind: workspace}
+  validation:
+    - {id: jobs_as_approved, check: job_differences, expect: "== 0", severity: mandatory, checklist: AR-4.1,
+       description: Each operation is a job running its notebook with the approved typed parameters, one run at a time, with a timeout}
+    - {id: results_are_json, check: non_json_results, expect: "== 0", severity: mandatory, checklist: AR-4.1,
+       description: Every operation, called through the server with its default arguments, succeeds and returns JSON}
+    - {id: tools_listed, check: tool_differences, expect: "== 0", severity: mandatory, checklist: AR-4.2,
+       description: The server lists exactly the approved tools with their descriptions and typed inputs, plus the status tools}
+    - {id: safe_by_design, check: unsafe_operations, expect: "== 0", severity: mandatory, checklist: AR-4.3,
+       description: Data-changing operations default to a dry run, calls wait a bounded time, a repeated call starts no second run, unknown arguments are rejected and the status tools work}
+    - {id: least_privilege, check: privilege_gaps, expect: "== 0", severity: mandatory, checklist: AR-4.4,
+       description: OAuth only; the app's service principal holds CAN_MANAGE_RUN on its operation jobs and nothing else; the declared clients may use it}
+    - {id: server_running, check: app_not_running, expect: "== 0", severity: mandatory, checklist: AR-4.2,
+       description: The MCP server app runs the delivered source}
+    - {id: recent_failures, check: failed_recent_runs, expect: ">= 0", severity: advisory, checklist: AR-7.2,
+       description: Operation runs that failed in the last 7 days (informational)}
+  certification:
+    approvers: [security]
+    valid_days: 90
