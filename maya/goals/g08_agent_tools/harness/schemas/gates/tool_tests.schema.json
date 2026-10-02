@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["tested_at", "as", "tests"],
+  "properties": {
+    "tested_at": {"type": "string"},
+    "as": {"type": "string"},
+    "tests": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["tool", "args", "passed"],
+                "properties": {"passed": {"type": "boolean"}, "problems": {"type": "array", "items": {"type": "string"}}}}
+    }
+  }
+}

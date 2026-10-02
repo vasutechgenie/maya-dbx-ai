@@ -1,0 +1,27 @@
+{
+  "type": "object",
+  "required": ["schema", "tools", "executors", "revoke", "removed", "test_as"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[^.]+\\.[^.]+$"},
+    "executors": {"type": "array", "items": {"type": "string"}},
+    "revoke": {"type": "array", "items": {"type": "string"}},
+    "removed": {"type": "array", "items": {"type": "string"}},
+    "test_as": {"enum": ["agent_identity", "deployer"]},
+    "tools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "full_name", "comment", "parameters", "columns", "sql", "examples", "dry_run"],
+        "properties": {
+          "name": {"type": "string"},
+          "full_name": {"type": "string"},
+          "comment": {"type": "string", "minLength": 1},
+          "sql": {"type": "string", "minLength": 1},
+          "parameters": {"type": "array", "items": {"type": "object", "required": ["name", "type", "comment"]}},
+          "columns": {"type": "array", "items": {"type": "object", "required": ["name", "type", "comment"]}},
+          "dry_run": {"type": "array", "items": {"type": "object", "required": ["passed"]}}
+        }
+      }
+    }
+  }
+}

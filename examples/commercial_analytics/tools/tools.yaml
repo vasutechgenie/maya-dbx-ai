@@ -1,0 +1,89 @@
+# G8 input: the business actions agents may call, written by the product owner (CR-AR-3.1).
+# Each tool becomes a Unity Catalog SQL table function with typed parameters; the tool_smith agent drafts its SQL
+# (on the metric views and Gold) and its descriptions unless 'sql' is given here. Security approves who may run them
+# (G8 executors in maya.yaml, CR-AR-3.2).
+#
+# Per tool:
+#   name        lowercase function name
+#   intent      what the tool answers, in business words (the agent writes the function comment from it)
+#   parameters  name, type (STRING, DATE, INT, BIGINT, DOUBLE, DECIMAL(p,s), BOOLEAN), description, optional default
+#   sql         optional: the body (one SELECT); reference parameters as <tool name>.<parameter>
+#   examples    test calls: args, and what the result must show
+#     expect.min_rows / max_rows   bounds on the row count
+#     expect.columns               columns the result must have
+#     expect.matches               {sql, key}: the result equals this independent SQL (numbers to the cent), joined on key
+tools:
+  - name: revenue_by_region
+    intent: Revenue, number of orders and average order value per sales region for orders placed between two dates.
+    parameters:
+      - {name: start_date, type: DATE, description: First order date included}
+      - {name: end_date, type: DATE, description: Last order date included}
+    examples:
+      - args: {start_date: "2026-09-01", end_date: "2026-09-30"}
+        expect:
+          min_rows: 6
+          columns: [region, revenue, orders, avg_order_value]
+          matches:
+            key: [region]
+            sql: |
+              SELECT region_name AS region, SUM(revenue) AS revenue, SUM(orders) AS orders
+              FROM solution_builder.maya_gold.sales_daily
+              WHERE order_date BETWEEN DATE'2026-09-01' AND DATE'2026-09-30'
+              GROUP BY region_name
+
+  - name: product_revenue_trend
+    intent: Monthly revenue and units sold of one product, to see whether it is growing or declining.
+    parameters:
+      - {name: product, type: STRING, description: "Product name, for example Analytics Edge"}
+    examples:
+      - args: {product: Analytics Edge}
+        expect:
+          min_rows: 3
+          columns: [order_month, revenue, units]
+          matches:
+            key: [order_month]
+            sql: |
+              SELECT DATE_TRUNC('MONTH', order_date) AS order_month, SUM(revenue) AS revenue, SUM(units) AS units
+              FROM solution_builder.maya_gold.sales_daily WHERE product_name = 'Analytics Edge'
+              GROUP BY 1
+      - args: {product: No Such Product}
+        expect: {max_rows: 0}
+
+  - name: fill_rate_by_region
+    intent: Units ordered, units shipped and the fill rate (share of ordered units shipped) per region for one shipping month.
+    parameters:
+      - {name: ship_month, type: DATE, description: First day of the shipping month}
+    examples:
+      - args: {ship_month: "2026-08-01"}
+        expect:
+          min_rows: 6
+          columns: [region, units_ordered, units_shipped, fill_rate]
+
+  - name: return_reasons
+    intent: >
+      Why customers return products: number of returns, units and returned value per return reason, for one region
+      or for all regions.
+    parameters:
+      - {name: region, type: STRING, default: all, description: "Region name, or 'all' for every region"}
+    examples:
+      - args: {region: all}
+        expect:
+          min_rows: 4
+          columns: [reason, returns, units_returned, returned_value]
+          matches:
+            key: [reason]
+            sql: |
+              SELECT reason, SUM(returns) AS returns, SUM(returned_value) AS returned_value
+              FROM solution_builder.maya_gold.returns_daily GROUP BY reason
+      - args: {region: Latin America}
+        expect: {min_rows: 1, columns: [reason, returns]}
+
+  - name: segment_summary
+    intent: Active customers and revenue per customer segment in one order month.
+    parameters:
+      - {name: order_month, type: DATE, description: First day of the order month}
+    examples:
+      - args: {order_month: "2026-09-01"}
+        expect:
+          min_rows: 2
+          columns: [segment, active_customers, revenue]

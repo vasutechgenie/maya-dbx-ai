@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: tools.load}
+  draft:
+    type: agent
+    agent: tool_smith
+    task: draft the SQL body and the descriptions of one agent tool
+    for_each: load.draft_tools
+    input: tools.draft_input
+    schema: harness/schemas/tool_draft.schema.json
+    output: tool_drafts.json
+    concurrency: 4
+  plan:       {type: code, run: tools.plan}
+  review:
+    type: gate
+    approver: security
+    items:
+      tool_plan.json: {schema: harness/schemas/gates/tool_plan.schema.json, check: gate_checks.tool_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: security
+    items:
+      tool_tests.json: {schema: harness/schemas/gates/tool_tests.schema.json, check: gate_checks.tool_tests}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> draft -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

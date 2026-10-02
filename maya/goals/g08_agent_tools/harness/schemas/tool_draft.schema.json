@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "comment", "parameters", "sql", "columns"],
+  "properties": {
+    "name": {"type": "string", "description": "the tool's name, exactly as given"},
+    "comment": {"type": "string", "minLength": 20, "maxLength": 800},
+    "parameters": {
+      "type": "array", "maxItems": 10,
+      "items": {"type": "object", "additionalProperties": false, "required": ["name", "comment"],
+                "properties": {"name": {"type": "string"}, "comment": {"type": "string", "minLength": 5, "maxLength": 400}}}
+    },
+    "sql": {"type": "string", "minLength": 10, "maxLength": 6000},
+    "columns": {
+      "type": "array", "minItems": 1, "maxItems": 30,
+      "items": {"type": "object", "additionalProperties": false, "required": ["name", "comment"],
+                "properties": {"name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,59}$"},
+                               "comment": {"type": "string", "minLength": 5, "maxLength": 400}}}
+    }
+  }
+}

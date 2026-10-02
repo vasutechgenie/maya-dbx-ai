@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "G8 Agent tools inputs",
+  "type": "object",
+  "required": ["schema", "tools"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {"type": "string", "description": "Schema ('schema' or 'catalog.schema') of the tool functions; never a foundation layer schema"},
+    "tools": {"type": "string", "description": "YAML file (relative to maya.yaml) listing the tools: see $defs.tools_file"},
+    "executors": {
+      "type": "array", "items": {"$ref": "#/$defs/principal"},
+      "description": "Who may run the tools (USE SCHEMA and EXECUTE): account groups, users or service principals. The agent identity (maya.yaml agent_identity) is always included"
+    },
+    "test_as": {"enum": ["agent_identity", "deployer"], "default": "agent_identity",
+                "description": "Identity the tool tests run as; agent_identity proves the grants are enough for the agents"},
+    "reads": {
+      "type": "array", "items": {"type": "string"},
+      "description": "Scopes the tools may read: metric_views, semantic, gold (or other layer names) or 'catalog.schema'. Default: metric_views, semantic and gold"
+    },
+    "max_rows": {"type": "integer", "minimum": 1, "maximum": 1000, "default": 50,
+                 "description": "Rows a test shows the approver (all rows are compared)"},
+    "model": {"type": "string", "description": "AI Gateway model for tool_smith (default: maya.yaml ai_gateway.model)"}
+  },
+  "$defs": {
+    "principal": {"type": "string", "minLength": 1, "description": "Account group name, user e-mail or service principal application id"},
+    "tools_file": {
+      "type": "object", "additionalProperties": false, "required": ["tools"],
+      "properties": {"tools": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/tool"}}}
+    },
+    "tool": {
+      "type": "object", "additionalProperties": false, "required": ["name", "intent", "examples"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{2,59}$"},
+        "intent": {"type": "string", "minLength": 10, "maxLength": 600},
+        "parameters": {"type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/parameter"}},
+        "sql": {"type": "string", "minLength": 10, "description": "Body: one SELECT; parameters as <tool name>.<parameter>"},
+        "examples": {"type": "array", "minItems": 1, "maxItems": 10, "items": {"$ref": "#/$defs/example"}}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false, "required": ["name", "type", "description"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,59}$"},
+        "type": {"type": "string", "pattern": "^(STRING|DATE|TIMESTAMP|INT|BIGINT|DOUBLE|BOOLEAN|DECIMAL\\(\\d+,\\s*\\d+\\))$"},
+        "description": {"type": "string", "minLength": 3},
+        "default": {"type": ["string", "number", "boolean"]}
+      }
+    },
+    "example": {
+      "type": "object", "additionalProperties": false, "required": ["args", "expect"],
+      "properties": {
+        "args": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+        "expect": {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {
+            "min_rows": {"type": "integer", "minimum": 0},
+            "max_rows": {"type": "integer", "minimum": 0},
+            "columns": {"type": "array", "items": {"type": "string"}},
+            "matches": {
+              "type": "object", "additionalProperties": false, "required": ["sql", "key"],
+              "properties": {"sql": {"type": "string"}, "key": {"type": "array", "minItems": 1, "items": {"type": "string"}}}
+            }
+          }
+        }
+      }
+    }
+  }
+}

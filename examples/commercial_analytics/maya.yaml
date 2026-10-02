@@ -12,6 +12,12 @@ target:
 ai_gateway:
   model: system.ai.claude-sonnet-4-6       # AI Gateway model service used by every agent unless a goal overrides it
   harness: openai-agents                   # Omnigent harness; calls <workspace>/ai-gateway/openai/v1 (chat completions)
+# The service principal the agents, the operations MCP clients and the tool tests act as. Security provisions it and
+# keeps its OAuth client id and secret (keys client_id, client_secret) in this secret scope; MAYA reads them only in
+# memory. The example's identity/create_agent_identity.py stands in for security.
+agent_identity:
+  service_principal: ${env:MAYA_AGENT_SP}  # application id
+  secret_scope: maya_agent
 # Only what is declared here is in scope; MAYA never scans other catalogs or schemas.
 # Per layer:
 #   catalog:  catalog of the layer's schemas (default: foundation.catalog)
@@ -68,6 +74,11 @@ goals:
         principals: ["${env:MAYA_ENGINEER_GROUP}"]
         read: [bronze, silver, gold, metric_views, semantic, governance]
         execute: [semantic, governance]
+      agents:                              # the agent identity: what a consumer reads, masks included
+        principals: ["${env:MAYA_AGENT_SP}"]
+        consumer: true
+        read: [gold, metric_views, semantic]
+        execute: [semantic]
     mask_functions:
       redact:     {kind: redact, unmasked_for: ["${env:MAYA_ENGINEER_GROUP}"]}
       email_mask: {kind: email,  unmasked_for: ["${env:MAYA_ENGINEER_GROUP}"]}
@@ -79,7 +90,7 @@ goals:
       - table: maya_gold.sales_daily
         columns: [region_name]
         by_group: {"${env:MAYA_CONSUMER_GROUP}": [North America West, North America East]}
-        unfiltered_for: ["${env:MAYA_ENGINEER_GROUP}"]
+        unfiltered_for: ["${env:MAYA_ENGINEER_GROUP}", "${env:MAYA_AGENT_SP}"]   # the agents answer for every region
   G5:                                      # AI Ready: needs AI Enabled (G0 to G4 certified)
     title: Commercial analytics
     description: Ask about sales, customers, fulfilment and returns of the commercial data product.
@@ -108,6 +119,12 @@ goals:
       - {user: "${env:MAYA_APPROVER}"}
     readers:                               # SELECT on the quality schema and the dashboard
       - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+  G8:                                      # AI Ready: business actions agents call, as Unity Catalog functions
+    schema: maya_tools                     # tool functions live in their own schema
+    tools: tools/tools.yaml                # the product owner's tools, example calls and expected results
+    executors:                             # USE SCHEMA and EXECUTE; the agent identity is always included
+      - "${env:MAYA_CONSUMER_GROUP}"
+      - "${env:MAYA_ENGINEER_GROUP}"
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.
@@ -118,6 +135,8 @@ certification:
     kpi_owner: ${env:MAYA_APPROVER}
     business_owner: ${env:MAYA_APPROVER}
     security: ${env:MAYA_APPROVER}
+    product_owner: ${env:MAYA_APPROVER}
+    platform_owner: ${env:MAYA_APPROVER}
   # Goals already done outside MAYA: attest them here and the goals after them can run.
   # self_certified:
   #   G0: {by: data-platform@example.com, note: foundation attested by the platform team, valid_until: 2027-06-30}

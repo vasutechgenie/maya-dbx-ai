@@ -1,0 +1,45 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G8
+  name: agent_tools
+  title: Agent tools
+  milestone: AI Ready
+  description: >
+    The business actions agents may call, as Unity Catalog SQL table functions with typed parameters and descriptions
+    on the function, every parameter and every result column. The product owner lists the tools with example calls
+    and what they must return; the tool_smith agent drafts each function's SQL on the metric views and Gold, and its
+    descriptions. MAYA dry-runs every example, security approves the functions and who may run them, and the bundle
+    delivers the functions and the EXECUTE grants. MAYA then runs every example as the agent identity, lists the tools
+    through the workspace's managed MCP server, and certifies once security signs off.
+spec:
+  prerequisites: [G2, G3]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: tool_plan.json, kind: artefact}
+    - {name: tool_tests.json, kind: artefact}
+    - {name: tools_schema, kind: workspace}
+    - {name: tool_functions, kind: workspace}
+  validation:
+    - {id: tools_deployed, check: missing_functions, expect: "== 0", severity: mandatory, checklist: AR-3.1,
+       description: Every tool is a SQL table function with exactly the approved parameters and result columns}
+    - {id: sql_as_approved, check: definition_differences, expect: "== 0", severity: mandatory, checklist: AR-3.1,
+       description: Each function runs exactly the approved SQL, a read with typed parameters (no SQL built from strings)}
+    - {id: self_describing, check: undescribed, expect: "== 0", severity: mandatory, checklist: AR-3.2,
+       description: The function, every parameter and every result column carry a description}
+    - {id: tests_pass, check: failing_tests, expect: "== 0", severity: mandatory, checklist: AR-3.3,
+       description: Every example call returns what the product owner expects, run as the agent identity}
+    - {id: execute_granted, check: missing_grants, expect: "== 0", severity: mandatory, checklist: AR-3.3,
+       description: Every executor, the agent identity first, holds USE SCHEMA and EXECUTE on every tool}
+    - {id: mcp_listed, check: mcp_gaps, expect: "== 0", severity: mandatory, checklist: AR-3.4,
+       description: The workspace's managed MCP server lists every tool with its description and typed inputs}
+    - {id: numbers_tested, check: shape_only_tools, expect: ">= 0", severity: advisory, checklist: AR-3.3,
+       description: Tools whose tests check only the shape of the result, never its numbers (informational)}
+  certification:
+    approvers: [security]
+    valid_days: 90

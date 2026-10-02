@@ -94,9 +94,13 @@ def resource_file(system, goal_id) -> Path:
     return root(system) / "resources" / f"maya_{goal_id.lower()}.yml"
 
 
-def script_files(base: Path) -> list[Path]:
-    """SQL scripts and JSON declarations (governed tags) of one goal."""
-    return sorted(p for p in base.rglob("*") if p.suffix in (".sql", ".json")) if base.exists() else []
+def script_files(base: Path, any_file=False) -> list[Path]:
+    """SQL scripts and JSON declarations (governed tags) of one goal; any_file: every file (a goal's jobs dir also
+    holds notebooks, app source and requirements)."""
+    if not base.exists():
+        return []
+    return sorted(p for p in base.rglob("*") if p.is_file() and "__pycache__" not in p.parts
+                  and (any_file or p.suffix in (".sql", ".json")))
 
 
 def _body(text: str) -> str:
@@ -106,7 +110,8 @@ def _body(text: str) -> str:
 def write(ctx, files: dict, catalogs=None, remove=(), jobs=False) -> list[str]:
     """Write a goal's scripts ({relative path: [statements]}, or {path.json: declaration}); returns the paths written
     (relative to the goal dir). A file whose statements are unchanged keeps its content (and generating run).
-    jobs=True writes the scripts the goal's own job runs (jobs/<goal>) instead of its deploy scripts."""
+    jobs=True writes the scripts the goal's own job runs (jobs/<goal>) instead of its deploy scripts; there a str
+    value is a file written as is (a notebook, app source, requirements)."""
     base = (jobs_dir if jobs else scripts_dir)(ctx.system, ctx.goal.id)
     cats = set(ctx.system.catalogs) | set(catalogs or ())
     for rel in remove:
@@ -115,7 +120,9 @@ def write(ctx, files: dict, catalogs=None, remove=(), jobs=False) -> list[str]:
     for rel, stmts in files.items():
         p = base / rel
         p.parent.mkdir(parents=True, exist_ok=True)
-        if rel.endswith(".json"):
+        if isinstance(stmts, str):
+            text = stmts
+        elif rel.endswith(".json"):
             text = tokenize(json.dumps(stmts, indent=1, sort_keys=True), cats) + "\n"
         else:
             text = render(f"{ctx.goal.id} {ctx.goal.title}: {rel}", ctx.run_id, stmts, cats)
@@ -253,6 +260,25 @@ def deploy(ctx, files: list[str]) -> dict:
     return {"deployed": files, "job_run_id": run_id, "statements": result.get("statements")}
 
 
+def deploy_resources(ctx) -> None:
+    """Deploy the bundle (a goal that delivers only its own resources: jobs, apps, endpoints)."""
+    r = ensure(ctx.system, ctx.ws)
+    code, out = _cli(ctx.system, ["bundle", "deploy", "-t", target(ctx.system), "--auto-approve"], r)
+    if code:
+        raise DeployError(f"bundle deploy failed:\n{out[-3000:]}")
+    ctx.log("     bundle deployed")
+
+
+def run_resource(ctx, key: str) -> str:
+    """`bundle run` one resource that is not a job (an app: deploys its source and starts it); returns the output."""
+    r = ensure(ctx.system, ctx.ws)
+    code, out = _cli(ctx.system, ["bundle", "run", key, "-t", target(ctx.system)], r)
+    if code:
+        raise DeployError(f"bundle run {key} failed:\n{out[-3000:]}")
+    ctx.log(f"     ran {key}")
+    return out
+
+
 def run_job(ctx, job_key: str, deploy=True) -> dict:
     """Run one of the goal's own bundle jobs and wait for it (bundle run blocks until it ends); deploy=True deploys
     the bundle first."""
@@ -279,6 +305,15 @@ def run_job(ctx, job_key: str, deploy=True) -> dict:
                           f"{failed.get('statement')}: {failed.get('error') or out[-1500:]}")
     ctx.log(f"     ran job {job_key} (run {run_id})")
     return res
+
+
+def resources(system, ws) -> dict:
+    """The bundle's deployed resources ({kind: {key: {id, name, url, ...}}}) as `bundle summary` reports them."""
+    r = ensure(system, ws)
+    code, out = _cli(system, ["bundle", "summary", "-t", target(system), "-o", "json"], r)
+    if code or "{" not in out:
+        return {}
+    return json.loads(out[out.index("{"):]).get("resources") or {}
 
 
 def _task_result(ws, run_id, key) -> dict:
@@ -335,7 +370,7 @@ def export_all(engine) -> dict:
                         remove=[s for s in stale if s not in res["files"]])
         if "jobs" in res:
             jbase = jobs_dir(engine.system, g.id)
-            jstale = [str(p.relative_to(jbase)) for p in script_files(jbase)]
+            jstale = [str(p.relative_to(jbase)) for p in script_files(jbase, any_file=True)]
             write(ctx, res["jobs"], catalogs=res.get("catalogs"), remove=[s for s in jstale if s not in res["jobs"]], jobs=True)
         if "resources" in res:
             write_resources(ctx, res["resources"], catalogs=res.get("catalogs"))
@@ -348,7 +383,8 @@ def export_all(engine) -> dict:
 # ---------------------------------------------------------------- certification
 def record_certification(ctx, signed_by) -> Path | None:
     base = scripts_dir(ctx.system, ctx.goal.id)
-    if not base.exists():
+    jbase, res = jobs_dir(ctx.system, ctx.goal.id), resource_file(ctx.system, ctx.goal.id)
+    if not base.exists() and not jbase.exists() and not res.exists():
         return None
     path = root(ctx.system) / "maya_manifest.json"
     m = json.loads(path.read_text()) if path.exists() else {"project": ctx.system.name, "goals": {}}
@@ -357,9 +393,8 @@ def record_certification(ctx, signed_by) -> Path | None:
     m["goals"][ctx.goal.id] = {
         "run_id": ctx.run_id, "certified_by": signed_by, "certified_at": datetime.now(timezone.utc).isoformat(),
         "scripts": {str(p.relative_to(base)): _digest(p) for p in script_files(base)}}
-    jbase, res = jobs_dir(ctx.system, ctx.goal.id), resource_file(ctx.system, ctx.goal.id)
     if jbase.exists():
-        m["goals"][ctx.goal.id]["jobs"] = {str(p.relative_to(jbase)): _digest(p) for p in script_files(jbase)}
+        m["goals"][ctx.goal.id]["jobs"] = {str(p.relative_to(jbase)): _digest(p) for p in script_files(jbase, any_file=True)}
     if res.exists():
         m["goals"][ctx.goal.id]["resources"] = {res.name: _digest(res)}
     path.write_text(json.dumps(m, indent=1, sort_keys=True))
