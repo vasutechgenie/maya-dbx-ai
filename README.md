@@ -103,8 +103,12 @@ maya status            # goals, checks, certifications and the AI Enabled milest
 
 Other commands: `plan`, `review`, `bundle`, `migrate`, `projects`, `portfolio` (see `maya --help`).
 
-**New to MAYA? Follow the step-by-step [tutorial](docs/TUTORIAL.md)**: it deploys a synthetic foundation and takes it
-to AI Enabled, goal by goal, then shows how to use MAYA on your own foundation.
+## Tutorials
+
+| Tutorial | For |
+|----------|-----|
+| [Example: from a synthetic foundation to AI Enabled](docs/TUTORIAL.md) | Learning MAYA: deploys a sample foundation and runs G0 to G4 on it, explaining every goal, check and command |
+| [Your own foundation to AI Enabled](docs/TUTORIAL_YOUR_FOUNDATION.md) | Using MAYA on your data: inventory, `maya.yaml` for your layers, your context, KPIs, taxonomy and access model, then CI/CD |
 
 ## Layout
 

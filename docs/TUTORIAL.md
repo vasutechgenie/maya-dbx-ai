@@ -9,6 +9,10 @@ foundation.
 
 The AI Enabled goals G0 to G4 are available now. The AI Ready goals G5 to G12 will be released later.
 
+> **Bringing your own foundation?** Do this tutorial once to learn MAYA, then follow
+> [Take your own data foundation to AI Enabled](TUTORIAL_YOUR_FOUNDATION.md), which walks through the same goals with
+> your own catalogs, tables, KPIs, taxonomy and groups.
+
 Contents
 
 0. [The two milestones: AI Enabled and AI Ready](#0-the-two-milestones-ai-enabled-and-ai-ready)
@@ -775,6 +779,8 @@ goals:
 | `email` | Keeps the domain: `***@example.com` |
 | `last4` | Keeps the last four characters |
 
+Write the `null` kind quoted, `{kind: "null"}`: unquoted, YAML reads it as an empty value.
+
 Or your own SQL over the input `value`: `{sql: "concat(left(value, 1), '***')", type: STRING}`. `type` defaults to
 `STRING`; set it to match non-string columns. `unmasked_for` lists the principals who see the real value; the
 writers always do.
@@ -1037,6 +1043,8 @@ Bundle settings in `maya.yaml` (all optional): `bundle: {dir: bundle, target: de
 
 ## 17. Using MAYA on your own foundation
 
+The full step-by-step guide is [Take your own data foundation to AI Enabled](TUTORIAL_YOUR_FOUNDATION.md). In short:
+
 1. **Create a project folder** in your own repository, for example `data-products/sales/`, and copy
    `examples/commercial_analytics/maya.yaml` into it.
 2. **Name the project and the state schemas:**
@@ -1129,6 +1137,8 @@ All commands take `--system <path to maya.yaml>` (default: `maya.yaml` in the cu
 | A run stopped half-way | `maya run --goal G --resume`. |
 | Unquoted `${env:...}` breaks YAML | Quote it inside `[...]` and `{...}`. |
 | A key named `on:` becomes `true` | YAML reads `on` as a boolean; quote it. MAYA's own keys avoid it (G4 uses `scopes`). |
+| `None is not one of ['redact', 'null', ...]` | Quote it: `kind: "null"`. |
+| `Additional properties are not allowed ('2)' ...)` | A comma inside `{...}` split a value such as `DECIMAL(18,2)`; quote it. |
 
 ---
 
