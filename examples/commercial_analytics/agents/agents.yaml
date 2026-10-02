@@ -16,10 +16,15 @@ supervisor:
     trusted, and run the data product's operations on request.
 sub_agents:
   - name: reporting
-    purpose: Governed KPI figures (revenue, orders, average order value, fill rate, returns, segments) from the agent tools.
+    purpose: >
+      Governed KPI figures (revenue, orders, average order value, fill rate, returns, segments) from the agent tools.
+      The return-reason tool covers all periods and cannot be filtered by month or quarter.
     tools: [functions]
   - name: genie
-    purpose: Ad-hoc questions the reporting tools do not cover, answered by the Genie space on the metric views.
+    purpose: >
+      Ad-hoc questions the reporting tools do not cover, answered by the Genie space on the metric views, including
+      any question scoped to a period, region or filter the reporting tools cannot apply (for example returns in a
+      given month or quarter).
     tools: [genie]
   - name: data_quality
     purpose: Whether the data is fresh and passes its data quality rules, and which rules fail.
@@ -32,5 +37,6 @@ routing_examples:
   - {question: "How has Analytics Edge revenue developed month by month?", route: [reporting]}
   - {question: "Which return reason costs us the most?", route: [reporting]}
   - {question: "Which product category had the highest average order value in August 2026?", route: [genie]}
+  - {question: "What refunded value did late deliveries cause in the second quarter of 2026?", route: [genie]}
   - {question: "Is the gold sales data up to date, and are any data quality rules failing?", route: [data_quality]}
   - {question: "A new orders file arrived in the landing zone. Check what would be loaded, without loading it.", route: [operations]}

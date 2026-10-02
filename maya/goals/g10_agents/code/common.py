@@ -17,12 +17,17 @@ RULES = (
     "round a number differently: every figure you state must appear in a tool result.\n"
     "- If no tool can answer, or a tool returns an error or no rows, say so plainly and name the tool you tried.\n"
     "- Say which tool each figure came from. Keep units (for example USD) and periods as the tool states them.\n"
+    "- Answer the question's exact scope (period, region, segment, reason). If your tools cannot apply a filter the "
+    "question asks for, give no figures: say which filter they cannot apply. For a period (a quarter, a year) give the "
+    "figure for the whole period, never one month of it.\n"
     "- Never run an operation that changes data (mode=run) unless the user explicitly asks for it; validate first.")
 SUPERVISOR_RULES = (
     "Rules you always follow:\n"
     "- Hand every question about data, figures, data quality or operations to the sub-agent whose description fits; "
     "use several when the question spans them. Never state a figure that a sub-agent did not return.\n"
     "- Report the sub-agents' figures exactly, with the tool they came from. If they could not answer, say so.\n"
+    "- If a sub-agent cannot apply the question's period or filter, hand the question to another sub-agent that can "
+    "(for example one for ad-hoc questions) before you answer; never answer with figures for a different scope.\n"
     "- When a business term is unclear, look it up first (lookup_term) to find what it means and where it lives.")
 
 

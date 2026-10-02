@@ -12,6 +12,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 import traceback
 
@@ -32,6 +33,18 @@ def _wait_not_updating(w, name, minutes=45):
         if time.time() > deadline:
             raise RuntimeError(f"endpoint {name} is still updating after {minutes} minutes")
         time.sleep(30)
+
+
+def _set_tags(w, name, tags):
+    """The tags API rejects a key that is both added and deleted, so changed values are deleted first."""
+    from databricks.sdk.service.serving import EndpointTag
+    current = {t.key: t.value for t in (w.serving_endpoints.get(name).tags or [])}
+    changed = [k for k, v in tags.items() if k in current and current[k] != v]
+    if changed:
+        w.serving_endpoints.patch(name, delete_tags=changed)
+    missing = [EndpointTag(key=k, value=v) for k, v in tags.items() if current.get(k) != v]
+    if missing:
+        w.serving_endpoints.patch(name, add_tags=missing)
 
 
 def main(argv=None):
@@ -65,8 +78,7 @@ def main(argv=None):
     src = open(os.path.join(code_dir, "agent.py")).read()
     marker = "CONFIG = None  # MAYA:CONFIG"
     assert marker in src, "agent.py lacks the configuration marker"
-    path = "/tmp/maya_agent/agent.py"
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    path = os.path.join(tempfile.mkdtemp(prefix="maya_agent_"), "agent.py")
     with open(path, "w") as f:
         f.write(src.replace(marker, "CONFIG = " + json.dumps(config, indent=1)))
 
@@ -100,11 +112,12 @@ def main(argv=None):
         _wait_not_updating(w, plan["endpoint"])
         try:
             d = agents.deploy(plan["model"], version, endpoint_name=plan["endpoint"], scale_to_zero=plan["scale_to_zero"],
-                              environment_vars=env, tags={"maya_goal": "G10", "maya_config_version": plan["version"]})
+                              environment_vars=env)
             break
         except ValueError as e:
             if "currently updating" not in str(e) or attempt == 3:
                 raise
+    _set_tags(w, plan["endpoint"], {"maya_goal": "G10", "maya_config_version": plan["version"]})
     acl = []
     for p in plan["users"]:
         k = "user_name" if "@" in p else "service_principal_name" if re.match(r"^[0-9a-f-]{36}$", p) else "group_name"
