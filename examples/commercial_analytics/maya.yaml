@@ -99,6 +99,15 @@ goals:
     access:
       - {group: "${env:MAYA_CONSUMER_GROUP}", level: CAN_RUN}
       - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+  G7:                                      # AI Ready: rules checked daily, a data quality dashboard and alerts
+    schema: maya_quality                   # rules, check results, quarantined rows and freshness
+    rules: quality/rules.yaml              # the data owner's rules; keys and agent suggestions are added
+    schedule: {cron: "0 0 6 * * ?", timezone: UTC}   # check daily at 06:00, before the dashboards refresh
+    # freshness limits come from G0's freshness_hours (Gold: 48 hours) unless set here or in the rules file
+    recipients:                            # alerts and check job failures
+      - {user: "${env:MAYA_APPROVER}"}
+    readers:                               # SELECT on the quality schema and the dashboard
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
 certification:
   # auto (default): a gate is approved, and a goal certified, as soon as its validation passes - recorded on behalf
   # of the approver below. manual: approvers decide with `maya review`.

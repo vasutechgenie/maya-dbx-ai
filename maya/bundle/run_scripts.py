@@ -12,11 +12,16 @@ found by the marker in its description, then updated in place or created; permis
 "subscribers", "permissions"}]}: each dashboard is found by its path (<parent_path>/<title>.lvdash.json), updated in
 place or created, and published; the schedule named by the marker and its subscribers are made exactly as declared
 (other schedules are left alone); permissions are added, never removed.
+{"freshness": {"into", "runs", "tables": [{"table", "layer", "max_hours"}]}} records, for the latest check run in
+"runs", each table's last data change (newest data-writing operation in its Delta history), age and staleness.
+{"alert_runs": [{"marker"}]} evaluates each alert found by the marker in its description now (an alert task run) and
+prints its state; the alert notifies its own subscribers.
 Every statement is idempotent, so a file can be re-run.
 
 Standalone on purpose (needs only databricks-sdk): it runs in any workspace, without MAYA.
 
-  python run_scripts.py --scripts <dir> --warehouse-id <id> --catalog dev_name=target_name [--only a.sql|b.sql] [--dry-run]
+  python run_scripts.py --scripts <dir> --warehouse-id <id> --catalog dev_name=target_name [--only a.sql|b.sql]
+                        [--keep-going] [--dry-run]
 """
 import argparse
 import json
@@ -69,6 +74,81 @@ def execute(client, warehouse_id, sql):
         r = client.statement_execution.get_statement(r.statement_id)
     if r.status.state != StatementState.SUCCEEDED:
         raise RuntimeError(r.status.error.message if r.status.error else str(r.status.state))
+
+
+def query(client, warehouse_id, sql) -> list[dict]:
+    from databricks.sdk.service.sql import StatementState
+    r = client.statement_execution.execute_statement(statement=sql, warehouse_id=warehouse_id, wait_timeout="50s")
+    while r.status.state in (StatementState.PENDING, StatementState.RUNNING):
+        time.sleep(2)
+        r = client.statement_execution.get_statement(r.statement_id)
+    if r.status.state != StatementState.SUCCEEDED:
+        raise RuntimeError(r.status.error.message if r.status.error else str(r.status.state))
+    cols = [c.name for c in r.manifest.schema.columns]
+    return [dict(zip(cols, row)) for row in (r.result.data_array or [])] if r.result else []
+
+
+DATA_OPS = ("WRITE", "MERGE", "UPDATE", "DELETE", "TRUNCATE", "STREAMING UPDATE", "COPY INTO", "RESTORE",
+            "CREATE TABLE AS SELECT", "REPLACE TABLE AS SELECT", "CREATE OR REPLACE TABLE AS SELECT",
+            "CREATE MATERIALIZED VIEW", "REFRESH MATERIALIZED VIEW", "CREATE STREAMING TABLE")
+
+
+def _lit(v):
+    return "NULL" if v is None else "'" + str(v).replace("\\", "\\\\").replace("'", "\\'") + "'"
+
+
+def freshness(client, warehouse_id, d):
+    rows = []
+    for t in d["tables"]:
+        changed, error = None, None
+        try:
+            for h in query(client, warehouse_id, f"DESCRIBE HISTORY {t['table']} LIMIT 100"):
+                if (h.get("operation") or "").upper() in DATA_OPS:
+                    changed = h["timestamp"]
+                    break
+        except Exception as e:
+            error = str(e)[:500]
+        ts = f"timestamp{_lit(changed)}" if changed else "NULL"
+        age = f"round((unix_timestamp(current_timestamp()) - unix_timestamp({ts})) / 3600, 1)"
+        limit = t.get("max_hours")
+        stale = "false" if limit is None else "true" if not changed else f"{age} > {limit}"
+        rows.append(f"({_lit(t['table'])}, {_lit(t.get('layer'))}, {ts}, {age}, {limit if limit is not None else 'NULL'}, "
+                    f"{stale}, {_lit(error)})")
+    if rows:
+        execute(client, warehouse_id, f"""INSERT INTO {d['into']}
+SELECT r.check_run_id, current_timestamp(), v.* FROM (VALUES {', '.join(rows)})
+  AS v(table_name, layer, last_data_change, age_hours, max_hours, stale, error)
+CROSS JOIN (SELECT max_by(check_run_id, started_at) AS check_run_id FROM {d['runs']}) r""")
+    return len(rows)
+
+
+def _alerts(client, marker):
+    token, out = None, []
+    while True:
+        r = client.api_client.do("GET", "/api/2.0/alerts", query={"page_size": 100, **({"page_token": token} if token else {})})
+        out += [a for a in r.get("results") or r.get("alerts") or []
+                if marker in (a.get("custom_description") or "") and a.get("lifecycle_state") != "DELETED"]
+        token = r.get("next_page_token")
+        if not token:
+            return out
+
+
+def evaluate_alert(client, warehouse_id, alert_id, name="maya alert evaluation") -> dict:
+    """Evaluate one alert now (a one-time alert task run); returns {state, run_id}."""
+    api = client.api_client
+    run = api.do("POST", "/api/2.2/jobs/runs/submit", body={
+        "run_name": name, "tasks": [{"task_key": "evaluate", "alert_task": {"alert_id": alert_id, "warehouse_id": warehouse_id}}]})
+    while True:
+        r = api.do("GET", "/api/2.2/jobs/runs/get", query={"run_id": run["run_id"]})
+        if r.get("state", {}).get("life_cycle_state") in ("TERMINATED", "SKIPPED", "INTERNAL_ERROR"):
+            break
+        time.sleep(5)
+    task = (r.get("tasks") or [{}])[0]
+    out = api.do("GET", "/api/2.2/jobs/runs/get-output", query={"run_id": task.get("run_id", run["run_id"])})
+    state = (out.get("alert_output") or {}).get("alert_state")
+    if not state:
+        raise RuntimeError(f"alert {alert_id} was not evaluated: {r.get('state', {}).get('state_message') or out.get('error')}")
+    return {"state": state, "run_id": run["run_id"]}
 
 
 def tag_policy(client, p):
@@ -192,6 +272,29 @@ def dashboard(client, warehouse_id, d):
 
 def run_json(client, warehouse_id, rel, doc, dry_run):
     n = 0
+    if doc.get("freshness"):
+        d = doc["freshness"]
+        if dry_run:
+            print(f"-- {rel}: freshness of {len(d['tables'])} tables into {d['into']}\n")
+        else:
+            try:
+                n += freshness(client, warehouse_id, d)
+                print(f"   freshness of {len(d['tables'])} tables recorded")
+            except Exception as e:
+                return n, {"failed": rel, "statement": 1, "error": str(e)[:2000], "sql": d["into"]}
+    for i, a in enumerate(doc.get("alert_runs") or []):
+        if dry_run:
+            print(f"-- {rel} #{i + 1}: evaluate alerts marked {a['marker']}\n")
+            continue
+        try:
+            found = _alerts(client, a["marker"])
+            if not found:
+                raise RuntimeError(f"no alert marked {a['marker']}")
+            for al in found:
+                print(f"   alert {al['display_name']!r}: {evaluate_alert(client, warehouse_id, al['id'])['state']}")
+        except Exception as e:
+            return n, {"failed": rel, "statement": i + 1, "error": str(e)[:2000], "sql": a["marker"]}
+        n += 1
     for i, d in enumerate(doc.get("dashboards") or []):
         if dry_run:
             print(f"-- {rel} #{i + 1}: dashboard {d['title']!r}, "
@@ -254,6 +357,7 @@ def main(argv=None):
     ap.add_argument("--catalog", action="append", default=[], metavar="DEV=TARGET")
     ap.add_argument("--only", default="", help="'|'-separated script paths relative to --scripts (default: all)")
     ap.add_argument("--parallel", type=int, default=8, help="files of one step run in parallel (steps run in order)")
+    ap.add_argument("--keep-going", action="store_true", help="run later steps after a failure (reported at the end)")
     ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args(argv)
     catalogs = dict(c.split("=", 1) for c in a.catalog)
@@ -268,7 +372,7 @@ def main(argv=None):
         rel = f.relative_to(root)
         steps.setdefault(rel.parts[0] if len(rel.parts) > 1 else "", []).append(f)
     from concurrent.futures import ThreadPoolExecutor
-    done, count = [], 0
+    done, count, failed = [], 0, []
     for step in sorted(steps):
         workers = 1 if a.dry_run else max(1, a.parallel)
         with ThreadPoolExecutor(max_workers=workers) as pool:
@@ -280,14 +384,16 @@ def main(argv=None):
             if not fail:
                 done.append(str(f.relative_to(root)))
                 print(f"ok {f.relative_to(root)}")
-        if failures:
-            for fail in failures:
-                print(f"FAILED {fail['failed']} statement {fail['statement']}: {fail['error']}\n{fail['sql']}", file=sys.stderr)
-            first = failures[0]
-            print(RESULT + json.dumps({"ok": False, "done": done, "statements": count, "failed": first["failed"],
-                                       "statement": first["statement"], "error": first["error"],
-                                       "failures": len(failures)}))
-            return 1
+        for fail in failures:
+            print(f"FAILED {fail['failed']} statement {fail['statement']}: {fail['error']}\n{fail['sql']}", file=sys.stderr)
+        failed += failures
+        if failed and not a.keep_going:
+            break
+    if failed:
+        first = failed[0]
+        print(RESULT + json.dumps({"ok": False, "done": done, "statements": count, "failed": first["failed"],
+                                   "statement": first["statement"], "error": first["error"], "failures": len(failed)}))
+        return 1
     print(RESULT + json.dumps({"ok": True, "done": done, "statements": count}))
     return 0
 

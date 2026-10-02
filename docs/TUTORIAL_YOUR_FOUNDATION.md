@@ -9,8 +9,8 @@ If you want to try MAYA first on synthetic data, do the [example tutorial](TUTOR
 foundation and runs the same goals; this tutorial does not repeat its explanations of each check, so keep it at hand
 as a reference.
 
-The AI Enabled goals G0 to G4 are available now, and so are the AI Ready goals G5 Genie space (section 17) and G6
-AI/BI dashboards (section 18). G7 to G12 will be released later.
+The AI Enabled goals G0 to G4 are available now, and so are the AI Ready goals G5 Genie space (section 17), G6
+AI/BI dashboards (section 18) and G7 data quality monitoring (section 19). G8 to G12 will be released later.
 
 Contents
 
@@ -32,6 +32,7 @@ Contents
 16. [Common situations on real foundations](#16-common-situations-on-real-foundations)
 17. [Next: G5 Genie space on your data product](#17-next-g5-genie-space-on-your-data-product)
 18. [Next: G6 AI/BI dashboards on your data product](#18-next-g6-aibi-dashboards-on-your-data-product)
+19. [Next: G7 data quality monitoring on your data product](#19-next-g7-data-quality-monitoring-on-your-data-product)
 
 ---
 
@@ -864,3 +865,36 @@ tutorial ([section 18.2](TUTORIAL.md#182-g6-aibi-dashboards)) explains every ste
 
 Commit `dashboards/`, `maya.yaml` and `bundle/`; CI/CD deploys the same dashboard to test and production
 (`bundle/scripts/G6/10_dashboard/dashboard.json`, with catalogs replaced per target).
+
+---
+
+## 19. Next: G7 data quality monitoring on your data product
+
+G7 checks data quality rules on your Silver and Gold tables on a schedule. It shows the results on a data quality
+dashboard and alerts on critical failures and stale data. The example tutorial
+([section 18.3](TUTORIAL.md#183-g7-data-quality-monitoring)) explains every step and check. On your own data:
+
+1. **Start from what the data owner already knows is wrong or must never be wrong.** Write those rules in
+   `quality/rules.yaml`: valid status codes, positive amounts, dates in order, tables that must never be empty.
+   Mark the ones that make the data wrong for consumers `critical`. You don't need to list key rules: MAYA derives
+   them from the primary and foreign keys G1 declared in Unity Catalog.
+2. **Set freshness limits that match your loads.** G0's `freshness_hours` applies per layer. Set a per-table
+   `freshness_hours` in the rules file for tables that load more or less often. Freshness counts only operations
+   that write data, so metadata changes never hide a missed load.
+3. **Add the `goals.G7` block** to `maya.yaml`: the quality schema, the rules file, the schedule (after your loads,
+   before your dashboards refresh), the recipients and the reader groups. Recipients can be users or notification
+   destinations (an email list, Slack or Teams).
+4. **Run it**: `maya validate`, then `maya run --goal G7`. The data owner reviews `quality_plan.json`. Each rule
+   shows its origin (yours, a key, or the agent's suggestion), why it matters, and how many rows fail today.
+   Suggestions the data owner doesn't want go to `reject` in the rules file, and the next run leaves them out.
+5. **Read the first results as a backlog, not a failure.** Rules failing on day one are findings about the data and
+   do not block certification. Fix them at the source, or adjust the rule with a `tolerance` when a known share of
+   rows is acceptable.
+
+If `allow_data` is off in G1 (no sample values to the model), G7 shows the agent only counts, never values, so it
+suggests fewer accepted-values and range rules. Set `goals.G7.allow_data` to decide for G7 separately.
+
+Commit `quality/`, `maya.yaml` and `bundle/`. CI/CD deploys the same quality schema, check job, alerts and dashboard
+to test and production (`bundle/scripts/G7`, `bundle/jobs/G7` and `bundle/resources/maya_g7.yml`, with catalogs
+replaced per target). Production targets run the job on its schedule; development targets deploy it paused.
+

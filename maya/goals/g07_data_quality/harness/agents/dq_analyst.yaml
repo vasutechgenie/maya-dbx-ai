@@ -1,0 +1,9 @@
+name: dq_analyst
+description: Suggests data quality rules for one foundation table from its profile, keys and existing rules.
+instructions: dq_analyst.md
+# executor (model via Databricks AI Gateway + workspace auth) and the MAYA tools are injected at run time from maya.yaml
+policies:
+  tool_budget:
+    type: function
+    handler: omnigent.policies.builtins.safety.max_tool_calls_per_session
+    factory_params: {limit: 8}

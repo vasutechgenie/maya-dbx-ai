@@ -1,0 +1,23 @@
+# Data quality rules the data owner requires (G7). MAYA adds the rules implied by the keys in Unity Catalog
+# (primary keys unique and not null, foreign keys resolve) and the dq_analyst agent suggests more from each table's
+# profile; the data owner approves the whole set. A suggestion turned down goes to 'reject' and is not proposed again.
+tables:
+  maya_silver.orders:
+    rules:
+      - {type: accepted_values, column: status, values: [open, shipped, cancelled], severity: critical}
+      - {type: range, column: quantity, min: 1, severity: critical, description: an order line has at least one unit}
+      - {type: range, column: unit_price, min: 0.01, severity: critical}
+  maya_silver.shipment:
+    rules:
+      - {type: expression, name: shipped_within_ordered, expression: "units_shipped <= units_ordered", severity: critical,
+         description: a shipment never ships more units than were ordered}
+  maya_gold.shipment_fill_daily:
+    rules:
+      - {type: range, column: fill_rate, min: 0, max: 1, severity: critical}
+  maya_gold.sales_daily:
+    freshness_hours: 48
+    rules:
+      - {type: row_count, min: 1, severity: critical}
+reject:                                  # suggestions the data owner turned down
+  - maya_gold.sales_daily.revenue_at_least_units              # a pricing heuristic, not a defect
+  - maya_silver.orders.unit_price_positive_for_non_cancelled  # covered by orders.range_unit_price

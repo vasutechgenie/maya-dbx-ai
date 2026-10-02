@@ -1,0 +1,33 @@
+nodes:
+  load:       {type: code, run: rules.load}
+  suggest:
+    type: agent
+    agent: dq_analyst
+    task: suggest data quality rules for one table from its profile
+    for_each: load.suggest_tables
+    input: rules.suggest_input
+    schema: harness/schemas/suggestions.schema.json
+    output: suggestions.json
+    concurrency: 4
+  plan:       {type: code, run: rules.plan}
+  review:
+    type: gate
+    approver: data_owner
+    items:
+      quality_plan.json: {schema: harness/schemas/gates/quality_plan.schema.json, check: gate_checks.quality_plan}
+  apply:      {type: code, run: apply.apply}
+  validate:   {type: validator}
+  repair:     {type: code, run: apply.repair}
+  sign_off:
+    type: gate
+    approver: data_owner
+    items:
+      alert_tests.json: {schema: harness/schemas/gates/alert_tests.schema.json, check: gate_checks.alert_tests}
+  mark:       {type: code, run: apply.record}
+  certify:    {type: certify}
+edges:
+  - load -> suggest -> plan -> review -> apply -> validate
+  - validate -> sign_off when: mandatory_pass
+  - validate -> repair when: mandatory_fail and attempts.validate <= limits.max_repair_loops
+  - repair -> validate
+  - sign_off -> mark -> certify

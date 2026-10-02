@@ -1,0 +1,57 @@
+apiVersion: maya/v1
+kind: Goal
+metadata:
+  id: G7
+  name: data_quality
+  title: Data quality monitoring
+  milestone: AI Ready
+  description: >
+    Data quality rules on the foundation, checked on a schedule, with the results on a data quality dashboard and
+    alerts that fire on critical rule failures and stale data. Rules come from the customer's rules file, from the
+    keys in Unity Catalog (primary keys unique and not null, foreign keys resolve) and from the dq_analyst agent,
+    which suggests rules from each table's profile. MAYA dry-runs every rule, the data owner approves the rule set,
+    and the bundle delivers the result tables, the check job, the alerts and the dashboard. MAYA then runs the job,
+    test-fires every alert and certifies once the data owner signs off.
+spec:
+  prerequisites: [G1]
+  requires_milestones: [AI Enabled]
+  inputs: inputs.schema.json
+  harness:
+    graph: harness/graph.yaml
+    limits: {max_repair_loops: 1}
+  drift: ledger.drift
+  outputs:
+    - {name: quality_plan.json, kind: artefact}
+    - {name: alert_tests.json, kind: artefact}
+    - {name: dq_schema, kind: workspace}
+    - {name: dq_job, kind: workspace}
+    - {name: dq_alerts, kind: workspace}
+    - {name: dq_dashboard, kind: workspace}
+  validation:
+    - {id: dq_tables_ready, check: missing_dq_tables, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: The rules, runs, results, quarantine and freshness tables and views exist in the quality schema}
+    - {id: rules_as_approved, check: rule_differences, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: The deployed rules are exactly the approved ones}
+    - {id: checks_ran, check: rules_without_results, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: The latest check run, after this delivery, recorded a result for every rule and the freshness of every table}
+    - {id: quarantine_protected, check: sensitive_quarantine_columns, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: Quarantined rows hold no column that G1 classified as sensitive}
+    - {id: dashboard_published, check: dashboard_gaps, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: The data quality dashboard is exactly the approved one, published, and every tile's query runs}
+    - {id: access_granted, check: missing_access, expect: "== 0", severity: mandatory, checklist: AR-2.4,
+       description: Every declared reader can read the quality schema and holds its permission on the dashboard}
+    - {id: job_scheduled, check: job_differences, expect: "== 0", severity: mandatory, checklist: AR-7.2,
+       description: The check job runs the delivered checks on the declared schedule and notifies the recipients on failure}
+    - {id: alerts_as_declared, check: alert_differences, expect: "== 0", severity: mandatory, checklist: AR-7.2,
+       description: The critical-failure and stale-data alerts exist with the declared query, condition and subscribers}
+    - {id: alerts_fire, check: alerts_not_firing, expect: "== 0", severity: mandatory, checklist: AR-7.2,
+       description: Every alert triggers when its condition is met (test-fired with a test row, then evaluated on the real data)}
+    - {id: rules_passing, check: failing_rules, expect: ">= 0", severity: advisory, checklist: AR-2.4,
+       description: Rules failing in the latest check run (the data, not the monitoring; informational)}
+    - {id: data_fresh, check: stale_tables, expect: ">= 0", severity: advisory, checklist: AR-7.2,
+       description: Tables whose last data change is older than their freshness limit (informational)}
+    - {id: recipients_set, check: notification_gaps, expect: ">= 0", severity: advisory, checklist: AR-7.2,
+       description: No recipients declared for the alerts and job failures (informational)}
+  certification:
+    approvers: [data_owner]
+    valid_days: 90

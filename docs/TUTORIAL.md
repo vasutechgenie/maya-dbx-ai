@@ -35,7 +35,7 @@ Contents
 15. [Certification options: automatic, manual, self-certified](#15-certification-options-automatic-manual-self-certified)
 16. [The Asset Bundle and CI/CD](#16-the-asset-bundle-and-cicd)
 17. [Using MAYA on your own foundation](#17-using-maya-on-your-own-foundation)
-18. [AI Ready: G5 Genie space, G6 dashboards and the goals to come](#18-ai-ready-g5-genie-space-g6-dashboards-and-the-goals-to-come)
+18. [AI Ready: G5 Genie space, G6 dashboards, G7 data quality and the goals to come](#18-ai-ready-g5-genie-space-g6-dashboards-g7-data-quality-and-the-goals-to-come)
 19. [Command reference](#19-command-reference)
 20. [Troubleshooting](#20-troubleshooting)
 21. [Cleaning up](#21-cleaning-up)
@@ -51,7 +51,7 @@ items to the AI Ready goals.
 | Milestone | Goals | Reached when | What it means | Release |
 |-----------|-------|--------------|---------------|---------|
 | **1 · AI Enabled** | G0 Foundation intake, G1 Metadata, G2 Metric views, G3 Semantic model, G4 Governance and access | G0 to G4 are certified | The foundation is described, measured, modelled and governed: an AI system can find, understand and safely use the data | Available now |
-| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 and G6 available now; G7 to G12 released later |
+| **2 · AI Ready** | G5 Genie space, G6 AI/BI dashboards, G7 Data quality monitoring, G8 Agent tools, G9 Operations MCP server, G10 Agents, G11 Evaluation, G12 Operations and documentation | AI Enabled, plus G5 to G12 certified | People and agents use the data product: Genie, dashboards, monitored quality, tools, agents, evaluation and operations | G5 to G7 available now; G8 to G12 released later |
 
 Every AI Ready goal also requires the AI Enabled milestone, so you finish G0 to G4 first.
 
@@ -114,7 +114,7 @@ sensitivity tag". Each goal has:
 | AI Enabled | G2 | Metric views | G1 | Every KPI as a Unity Catalog metric view, each measure proven against an independent reference SQL |
 | AI Enabled | G3 | Semantic model | G1, G2 | Domain > subdomain > page taxonomy, tags on every asset, ontology registry, business glossary, `ontology_lookup()` |
 | AI Enabled | G4 | Governance and access | G1, G2 | Roles and grants, ABAC policies and column masks over sensitive columns, row filters, an audit view |
-| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 and G6 now, G7 to G12 later (section 18) |
+| AI Ready | G5 to G12 | Genie space, AI/BI dashboards, data quality monitoring, agent tools, Ops MCP server, agents, evaluation, operations and documentation | AI Enabled | G5 to G7 now, G8 to G12 later (section 18) |
 
 **Milestone.** Each goal's `goal.yaml` names its milestone (`metadata.milestone`). `maya status` reports a milestone
 as reached when all its goals are certified.
@@ -1084,11 +1084,11 @@ Several projects can share one workspace; each has its own state schema and dash
 
 ---
 
-## 18. AI Ready: G5 Genie space, G6 dashboards and the goals to come
+## 18. AI Ready: G5 Genie space, G6 dashboards, G7 data quality and the goals to come
 
 AI Ready is milestone 2. It builds on AI Enabled so that people and agents can use the data product. Every AI Ready
-goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space and G6 AI/BI dashboards are
-available now; G7 to G12 will be released later.
+goal requires the AI Enabled milestone, plus the goals listed for it. G5 Genie space, G6 AI/BI dashboards and G7
+data quality monitoring are available now; G8 to G12 will be released later.
 
 ### 18.1 G5 Genie space
 
@@ -1235,7 +1235,7 @@ values exactly as G4 defines them. `maya status` now shows G5:
   G5   Genie space                        certified          checks 11/11  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (6 of 13 goals certified; G7 to G12 not released yet)
+  milestone AI Ready: not yet (6 of 13 goals certified; G8 to G12 not released yet)
 ```
 
 AI Ready stays "not yet" until G6 to G12 are certified.
@@ -1361,24 +1361,211 @@ The schedule (07:00 UTC daily, subscriber: the approver) is under **Schedule** o
   G6   AI/BI dashboards                   certified          checks 12/12  certified by ...
 
   milestone AI Enabled: reached
-  milestone AI Ready: not yet (7 of 13 goals certified; G7 to G12 not released yet)
+  milestone AI Ready: not yet (7 of 13 goals certified; G8 to G12 not released yet)
 ```
 
 Edits made to the dashboard in the UI are drift: the next `maya status` reports G6 stale. To change a page, change
 `dashboards/pages.yaml` (or the metric views in G2) and run G6 again.
 
-### 18.3 The goals to come
+### 18.3 G7 Data quality monitoring
+
+*Milestone 2 · AI Ready, step 3 of 8.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g07_data_quality](../maya/goals/g07_data_quality/README.md).
+
+**What it does.** G7 makes the quality of the foundation visible and tells someone when it breaks. It delivers:
+
+- **Rules** on every Silver and Gold table, from three sources:
+  - the data owner's rules file;
+  - the keys in Unity Catalog: primary keys are unique and never null, and foreign keys resolve;
+  - the `dq_analyst` agent, which reads each table's profile (row count, nulls, distinct values and, for columns
+    that are not sensitive, the minimum, maximum and most common values) and suggests rules such as accepted
+    values for a status column or `units_shipped <= units_ordered`.
+
+  Every rule is dry-run on its table before the data owner sees it, so the review shows what each rule finds today.
+- **A quality schema** holding the approved rules, one row per check run, the result of every rule in every run, a
+  sample of the rows that broke a rule (their key and non-sensitive columns only), and the freshness of every
+  table: when its data last changed, against its limit.
+- **A check job** on your schedule. It runs every rule, records freshness, then evaluates the alerts.
+- **Two alerts**: one for critical rules failing, one for stale data. They notify the recipients you declare. Job
+  failures notify them too.
+- **A data quality dashboard** with four pages:
+  - latest results;
+  - history across runs;
+  - quarantined rows;
+  - freshness.
+
+Freshness is measured from each table's Delta history: the newest operation that wrote data. Comment and tag
+changes don't count, so G1's metadata work never makes a stale table look fresh.
+
+**Inputs.** A rules file written by the data owner, and a block in `maya.yaml`:
+
+```yaml
+goals:
+  G7:
+    schema: maya_quality                   # rules, check results, quarantined rows and freshness
+    rules: quality/rules.yaml              # the data owner's rules; keys and agent suggestions are added
+    schedule: {cron: "0 0 6 * * ?", timezone: UTC}   # check daily at 06:00, before the dashboards refresh
+    recipients:                            # alerts and check job failures
+      - {user: "${env:MAYA_APPROVER}"}
+    readers:                               # SELECT on the quality schema and the dashboard
+      - {group: "${env:MAYA_ENGINEER_GROUP}", level: CAN_RUN}
+```
+
+`quality/rules.yaml` lists rules per table, optional freshness limits, and the suggestions the data owner turned
+down:
+
+```yaml
+tables:
+  maya_silver.orders:
+    rules:
+      - {type: accepted_values, column: status, values: [open, shipped, cancelled], severity: critical}
+      - {type: range, column: quantity, min: 1, severity: critical}
+  maya_silver.shipment:
+    rules:
+      - {type: expression, name: shipped_within_ordered, expression: "units_shipped <= units_ordered", severity: critical}
+  maya_gold.sales_daily:
+    freshness_hours: 48
+    rules:
+      - {type: row_count, min: 1, severity: critical}
+reject:
+  - maya_gold.sales_daily.revenue_at_least_units      # a suggestion the data owner turned down
+```
+
+Rule types:
+
+| Type | What it checks |
+|------|----------------|
+| `not_null` | The column is never null |
+| `unique` | The column, or a combination of `columns`, is unique |
+| `accepted_values` | The column holds only the listed values |
+| `range` | The column stays within `min` and/or `max` |
+| `expression` | Every row satisfies an SQL condition |
+| `references` | The column matches a column of another table |
+| `row_count` | The table's row count stays within `min` and/or `max` |
+
+Every rule has a `severity`: `critical` failures raise the alert; `warning` failures show on the dashboard only. A
+`tolerance` (a fraction of rows) lets a rule pass with a few failing rows.
+
+Freshness limits come from G0's `freshness_hours` (48 hours for Gold in the example), unless you set them under
+`goals.G7.freshness_hours` or per table in the rules file. Columns that G1 classified as sensitive are never shown
+to the model and never copied to the quarantine. The classes come from G4's `sensitive` setting (`pii` in the
+example).
+
+Optional settings:
+
+- `layers`: which layers are monitored (default Silver and Gold).
+- `exclude`: tables to leave out.
+- `suggest`: set to `false` to turn off the agent's suggestions.
+- `max_suggestions_per_table`: default 6.
+- `quarantine_rows`: rows kept per rule and run (default 100).
+- `retention_days`: how long results are kept (default 90).
+- `dashboard`: title, folder and credentials.
+
+**Run it:**
+
+```bash
+maya run --goal G7
+```
+
+```
+Running G7 Data quality monitoring  run=g7-...
+  [code] load
+     9 tables to monitor; 6 customer rules; profiling and suggesting for 9
+  [agent] suggest
+     agent suggest-0: 29.4s
+     ...
+  [code] plan
+     plan: 91 rules on 9 tables (6 customer, 31 from keys, 54 suggested); 0 fail today; 0 findings
+  [gate] review
+  [code] apply
+     deployed via bundle: 2 scripts, 14 statements (job run ...)
+     ran job maya_g7_quality (run ...)
+     apply: 91 rules, 9 tables; check job run ...
+  [validator] validate
+     PASS dq_tables_ready: observed 0 (expected == 0)
+     ...
+     PASS alerts_fire: observed 0 (expected == 0)
+     ...
+  [gate] sign_off
+  [code] mark
+  [certify] certify
+G7 CERTIFIED
+```
+
+What happens, in order:
+
+1. **load** finds the tables to monitor (in the example, the six Silver and three Gold tables; `customer_360` is a
+   view, so the tables behind it are monitored instead). It also reads their keys and sensitivity classes from
+   Unity Catalog, checks the rules file against the tables, and profiles each table for the agent.
+2. **suggest** runs one `dq_analyst` agent per table (four at a time). Tables whose columns, keys and rules did not
+   change since the last certified run reuse that run's suggestions.
+3. **plan** merges the rules. It drops a suggestion that repeats an existing rule, names a column that does not
+   exist, or was rejected. It then dry-runs every rule: a customer rule whose query fails stops the run, and a
+   failing suggestion is dropped with a finding. Suggestions that fail today are kept and listed as findings so the
+   data owner can decide.
+4. **review** is a gate: the data owner approves `quality_plan.json`. It holds every rule with its origin, its
+   reason and what it finds today, plus the freshness limits, the schedule and the recipients.
+5. **apply** writes the bundle content and deploys it:
+   - `bundle/scripts/G7`: the quality schema, the rules and the dashboard;
+   - `bundle/jobs/G7`: one script per rule, plus freshness and alert evaluation;
+   - `bundle/resources/maya_g7.yml`: the check job and the two alerts.
+
+   Then it runs the check job once.
+6. **validate** reads everything back and test-fires each alert. It inserts a test row the alert's query counts,
+   evaluates the alert (it must trigger), deletes the row and evaluates it again on the real data. The results are
+   in `alert_tests.json`. Recipients get one test notification per alert, followed by a recovery notice when the
+   real data is fine.
+7. **sign_off** is a second gate: the data owner approves the alert tests.
+
+**Checks.**
+
+| Check | Severity | Passes when |
+|-------|----------|-------------|
+| `dq_tables_ready` | mandatory | The rules, runs, results, quarantine and freshness tables and views exist |
+| `rules_as_approved` | mandatory | The deployed rules are exactly the approved ones |
+| `checks_ran` | mandatory | The latest check run, after this delivery, has a result for every rule and the freshness of every table |
+| `quarantine_protected` | mandatory | No quarantined row holds a column classified as sensitive |
+| `dashboard_published` | mandatory | The dashboard is exactly the approved one, published, and every dataset runs |
+| `access_granted` | mandatory | Every reader can read the quality schema and holds its permission on the dashboard |
+| `job_scheduled` | mandatory | The check job runs the delivered checks on the declared schedule and notifies on failure |
+| `alerts_as_declared` | mandatory | Both alerts exist with the declared query, condition and subscribers |
+| `alerts_fire` | mandatory | Each alert triggers on its test row |
+| `rules_passing` | advisory | Rules failing in the latest run (a finding about the data, not the monitoring) |
+| `data_fresh` | advisory | Tables older than their freshness limit |
+| `recipients_set` | advisory | No recipients declared |
+
+Failing rules do not block certification. G7 certifies that quality is measured and that someone hears about it;
+fixing the data is the data owner's work, and the dashboard shows where to start.
+
+**Development targets pause schedules.** A bundle target in `mode: development` (MAYA's default `dev` target)
+deploys every job schedule paused. `job_scheduled` accepts that on a development target and notes it. Production
+targets run the job on the declared schedule. To check on demand in dev, run the job from **Jobs & Pipelines**, or
+run `databricks bundle run maya_g7_quality` in `bundle/`.
+
+**See the result.** Open **Dashboards** and select *commercial-analytics data quality* (in the `MAYA` folder under
+your home folder). The alerts are under **Alerts**, and the check job is under **Jobs & Pipelines** as *MAYA data
+quality - commercial-analytics*. `maya status` now shows:
+
+```
+  G7   Data quality monitoring            certified          checks 12/12  certified by ...
+
+  milestone AI Enabled: reached
+  milestone AI Ready: not yet (8 of 13 goals certified; G8 to G12 not released yet)
+```
+
+To change a rule, edit `quality/rules.yaml`. To turn a suggestion down, add its id to `reject`. Then run G7 again.
+
+### 18.4 The goals to come
 
 | Goal | Outcome | Prerequisites | Certified by | Checklist |
 |------|---------|---------------|--------------|-----------|
-| G7 Data quality monitoring | Foundation data quality is visible (DQ dashboard) and alerts fire on critical failures and stale Gold | G1 | Data owner | AR-2.4, AR-7.2 |
 | G8 Agent tools (UC functions) | Reusable business actions as parameterised, self-describing Unity Catalog functions, tested, granted and exposed through managed MCP | G2, G3 | Security | AR-3.1 to AR-3.4 |
 | G9 Operations MCP server | Operational notebooks as parameterised jobs returning JSON, served to agents by an MCP server with OAuth and least privilege | G4, G7 | Security | AR-4.1 to AR-4.4 |
 | G10 Agents | A supervisor with capability-scoped sub-agents, registered in Unity Catalog, deployed to Model Serving and traced | G5, G8, G9 | Product owner | AR-5.1 to AR-5.4 |
 | G11 Evaluation | Agent and Genie answers verified against SQL truth on the metric views, with a regression job on change | G10 | Business owner | AR-6.1 to AR-6.3 |
 | G12 Operations and documentation | Jobs scheduled with retries and notifications, monitoring, runbooks, a product document and an onboarding page | G10, G11 | Platform owner | AR-7.1, AR-7.3, AR-7.4, AR-8.1, AR-8.2 |
 
-**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G6: a block
+**AI Ready = AI Enabled plus G5 to G12 certified.** The goals still to come will work exactly like G0 to G7: a block
 per goal under `goals:` in `maya.yaml`, validated inputs, a graph harness with agents and gates, a validator, delivery
 through the project's Asset Bundle, and automatic or manual certification. What you build for AI Enabled is what they
 use: the metric views (G2) feed agent tools and evaluation, and the governance roles (G4) scope the MCP server and

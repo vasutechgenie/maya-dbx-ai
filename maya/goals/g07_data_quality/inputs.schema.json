@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema"],
+  "properties": {
+    "schema": {"type": "string", "pattern": "^[A-Za-z0-9_\\-]+(\\.[A-Za-z0-9_\\-]+)?$",
+               "description": "Where the rules, check results, quarantine and freshness tables live: 'schema' (foundation catalog) or 'catalog.schema'"},
+    "rules": {"type": "string",
+              "description": "YAML file (relative to maya.yaml) with the customer's rules per table, freshness limits and rejected suggestions"},
+    "layers": {"type": "array", "items": {"type": "string"}, "default": ["silver", "gold"],
+               "description": "Foundation layers whose tables are monitored (tables named in the rules file are monitored too)"},
+    "exclude": {"type": "array", "items": {"type": "string"}, "default": [],
+                "description": "Tables not to monitor: 'schema.table' patterns (fnmatch)"},
+    "suggest": {"type": "boolean", "default": true,
+                "description": "Let the dq_analyst agent suggest rules from each table's profile (the data owner approves them)"},
+    "allow_data": {"type": "boolean",
+                   "description": "Show sample values (top values, minimum, maximum) of non-sensitive columns to the model. Default: G1's allow_data"},
+    "max_suggestions_per_table": {"type": "integer", "minimum": 0, "maximum": 12, "default": 6},
+    "freshness_hours": {"type": "object", "additionalProperties": {"type": "number", "exclusiveMinimum": 0},
+                        "description": "Freshness limit per layer, in hours since the last data change. Default: G0's freshness_hours"},
+    "sensitive": {"type": "object", "additionalProperties": false,
+                  "properties": {"tag": {"type": "string"}, "values": {"type": "array", "items": {"type": "string"}}},
+                  "description": "Column tag values (set by G1) never copied to the quarantine or shown to the model. Default: G4's sensitive setting"},
+    "quarantine_rows": {"type": "integer", "minimum": 0, "maximum": 10000, "default": 100,
+                        "description": "Failing rows kept per rule and check run (keys and non-sensitive columns only)"},
+    "retention_days": {"type": "integer", "minimum": 1, "default": 90,
+                       "description": "Check results and quarantined rows older than this are deleted"},
+    "schedule": {
+      "type": "object", "additionalProperties": false, "required": ["cron"],
+      "properties": {
+        "cron": {"type": "string", "minLength": 9, "description": "Quartz cron expression, for example '0 0 6 * * ?' (06:00 daily)"},
+        "timezone": {"type": "string", "default": "UTC"},
+        "paused": {"type": "boolean", "default": false}
+      },
+      "default": {"cron": "0 0 6 * * ?", "timezone": "UTC"},
+      "description": "When the check job runs (the alerts are evaluated at the end of every run)"
+    },
+    "recipients": {
+      "type": "array", "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "user": {"type": "string", "description": "User name (email) of a workspace user"},
+          "destination": {"type": "string", "description": "Id of a notification destination (email list, Slack, Teams)"}
+        },
+        "oneOf": [{"required": ["user"]}, {"required": ["destination"]}]
+      },
+      "description": "Who the alerts notify, and who hears when the check job fails"
+    },
+    "dashboard": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "title": {"type": "string", "minLength": 3, "maxLength": 120},
+        "parent_path": {"type": "string", "default": "MAYA"},
+        "credentials": {"type": "string", "enum": ["embedded", "viewer"], "default": "viewer"}
+      },
+      "default": {},
+      "description": "The data quality dashboard (title default: '<project> data quality')"
+    },
+    "readers": {
+      "type": "array", "default": [],
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "group": {"type": "string"},
+          "service_principal": {"type": "string"},
+          "level": {"type": "string", "enum": ["CAN_READ", "CAN_RUN", "CAN_EDIT", "CAN_MANAGE"], "default": "CAN_RUN"}
+        },
+        "oneOf": [{"required": ["group"]}, {"required": ["service_principal"]}]
+      },
+      "description": "Who may read the quality schema (SELECT) and open the dashboard (account-level groups or service principals)"
+    },
+    "mode": {"type": "string", "enum": ["incremental", "full"], "default": "incremental",
+             "description": "incremental: the agent only re-profiles tables that changed since certification"},
+    "model": {"type": "string", "description": "AI Gateway model for this goal's agent (default: the project's model)"}
+  },
+  "$defs": {
+    "rules_file": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "tables": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object", "additionalProperties": false,
+            "properties": {
+              "freshness_hours": {"type": "number", "exclusiveMinimum": 0},
+              "rules": {"type": "array", "items": {"$ref": "#/$defs/rule"}}
+            }
+          },
+          "description": "Keyed by 'schema.table' (or 'catalog.schema.table')"
+        },
+        "reject": {"type": "array", "items": {"type": "string"},
+                   "description": "Ids of suggested rules the data owner turned down; never proposed again"}
+      }
+    },
+    "rule": {
+      "type": "object", "additionalProperties": false, "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "enum": ["not_null", "unique", "accepted_values", "range", "expression", "references", "row_count"]},
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,59}$", "description": "Default: <type>_<columns>; required for 'expression'"},
+        "column": {"type": "string"},
+        "columns": {"type": "array", "items": {"type": "string"}, "minItems": 1, "description": "unique: the column combination"},
+        "values": {"type": "array", "minItems": 1, "items": {"type": ["string", "number", "boolean"]}},
+        "min": {"type": "number"},
+        "max": {"type": "number"},
+        "expression": {"type": "string", "description": "SQL condition every row must satisfy"},
+        "to": {"type": "string", "description": "references: 'schema.table.column' (or catalog-qualified) the column must match"},
+        "severity": {"type": "string", "enum": ["critical", "warning"], "default": "warning"},
+        "tolerance": {"type": "number", "minimum": 0, "maximum": 1, "default": 0,
+                      "description": "Fraction of rows that may fail before the rule fails"},
+        "description": {"type": "string"}
+      }
+    }
+  }
+}

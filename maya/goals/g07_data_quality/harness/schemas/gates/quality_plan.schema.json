@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "required": ["marker", "schema", "rules", "freshness", "schedule", "recipients", "dashboard", "readers"],
+  "properties": {
+    "marker": {"type": "string"},
+    "schema": {"type": "string", "pattern": "^[^.]+\\.[^.]+$"},
+    "rules": {
+      "type": "array", "minItems": 1,
+      "items": {"type": "object", "required": ["id", "table", "type", "severity", "description", "origin", "baseline"],
+                "properties": {"origin": {"enum": ["customer", "key", "agent"]},
+                               "severity": {"enum": ["critical", "warning"]}}}
+    },
+    "freshness": {"type": "array", "items": {"type": "object", "required": ["table", "layer"]}},
+    "schedule": {"type": "object", "required": ["cron", "timezone"]},
+    "recipients": {"type": "array"},
+    "dashboard": {"type": "object", "required": ["title", "parent_path", "credentials"]},
+    "readers": {"type": "array"}
+  }
+}
