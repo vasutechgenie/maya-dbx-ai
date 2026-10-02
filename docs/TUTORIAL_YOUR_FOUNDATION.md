@@ -270,7 +270,8 @@ your schemas.
 
 ## 7. Step 5 · G0 Foundation intake (or self-certify it)
 
-*Milestone 1 · AI Enabled, step 1 of 5.*
+*Milestone 1 · AI Enabled, step 1 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g00_foundation](../maya/goals/g00_foundation/README.md).
 
 You have two options.
 
@@ -313,7 +314,8 @@ certification:
 
 ## 8. Step 6 · G1 Metadata on your tables
 
-*Milestone 1 · AI Enabled, step 2 of 5.*
+*Milestone 1 · AI Enabled, step 2 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g01_metadata](../maya/goals/g01_metadata/README.md).
 
 **6a. Write the business context.** The describer agent writes better descriptions when it knows your business.
 Create `context/business.yaml`:
@@ -394,7 +396,8 @@ To correct something:
 
 ## 9. Step 7 · G2 Your KPIs as metric views
 
-*Milestone 1 · AI Enabled, step 3 of 5.*
+*Milestone 1 · AI Enabled, step 3 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g02_metric_views](../maya/goals/g02_metric_views/README.md).
 
 **7a. Collect the KPIs.** With each KPI owner, write down for every KPI: its name, the business definition, the Gold
 (or Silver) table it should be computed from, the dimensions people slice it by, and how they would compute it by
@@ -491,7 +494,8 @@ Adding a KPI later: add it to the file and run `maya run`; G2 turns stale and on
 
 ## 10. Step 8 · G3 Your business taxonomy
 
-*Milestone 1 · AI Enabled, step 4 of 5.*
+*Milestone 1 · AI Enabled, step 4 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g03_semantic_model](../maya/goals/g03_semantic_model/README.md).
 
 **8a. Agree the domains and subdomains** with the business owner. Domains are broad areas of the business; subdomains
 are the topics inside them. Each has an `id` (lowercase; it becomes a tag value), a name, a description and, for
@@ -600,7 +604,8 @@ SELECT * FROM retail_prod.maya_semantic.ontology_lookup('like-for-like');
 
 ## 11. Step 9 · G4 Your access model
 
-*Milestone 1 · AI Enabled, step 5 of 5.*
+*Milestone 1 · AI Enabled, step 5 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g04_governance](../maya/goals/g04_governance/README.md).
 
 **9a. List the audiences** and map each to an account group or service principal:
 

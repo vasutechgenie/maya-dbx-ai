@@ -48,13 +48,14 @@ The data foundation is described, measured, modelled and governed. **AI Enabled 
 
 | Goal | Outcome | Prerequisites | Certified by | Checklist |
 |------|---------|---------------|--------------|-----------|
-| G0 Foundation intake | The Bronze, Silver and Gold foundation is in place and every asset is registered. Read-only. | - | Data owner | AE-1 to AE-4, AE-8.1 |
-| G1 Metadata | Every table, view and column is described, classified for sensitivity and connected by keys. | G0 | Data steward, data owner | AE-3.2, AE-5.1 to AE-5.5 |
-| G2 Metric views | Every KPI is a Unity Catalog metric view with business-friendly measures, proven against independent SQL. | G1 | KPI owner, data steward | AE-5.1, AE-6.1 to AE-6.3 |
-| G3 Semantic model | Domains, subdomains and pages are defined; every Silver, Gold and metric-view asset sits on exactly one page. | G1, G2 | Business owner | AE-7.1 to AE-7.4 |
-| G4 Governance and access | Least-privilege access; every sensitive column masked; row filters; audit. | G1, G2 | Security | AE-3.4, AE-8.1 to AE-8.4 |
+| [G0 Foundation intake](maya/goals/g00_foundation/README.md) | The Bronze, Silver and Gold foundation is in place and every asset is registered. Read-only. | - | Data owner | AE-1 to AE-4, AE-8.1 |
+| [G1 Metadata](maya/goals/g01_metadata/README.md) | Every table, view and column is described, classified for sensitivity and connected by keys. | G0 | Data steward, data owner | AE-3.2, AE-5.1 to AE-5.5 |
+| [G2 Metric views](maya/goals/g02_metric_views/README.md) | Every KPI is a Unity Catalog metric view with business-friendly measures, proven against independent SQL. | G1 | KPI owner, data steward | AE-5.1, AE-6.1 to AE-6.3 |
+| [G3 Semantic model](maya/goals/g03_semantic_model/README.md) | Domains, subdomains and pages are defined; every Silver, Gold and metric-view asset sits on exactly one page. | G1, G2 | Business owner | AE-7.1 to AE-7.4 |
+| [G4 Governance and access](maya/goals/g04_governance/README.md) | Least-privilege access; every sensitive column masked; row filters; audit. | G1, G2 | Security | AE-3.4, AE-8.1 to AE-8.4 |
 
-`maya status` reports the milestone (`milestone AI Enabled: reached`) once G0 to G4 are certified.
+`maya status` reports the milestone (`milestone AI Enabled: reached`) once G0 to G4 are certified. Each goal's
+page shows its architecture: inputs, harness graph, outputs and checks.
 
 ### Milestone 2 · AI Ready (G5 to G12 will be released later)
 
@@ -75,6 +76,55 @@ certified.** Every AI Ready goal also requires AI Enabled.
 These goals are not in this release; they will be released later.
 
 ## How it works
+
+```mermaid
+flowchart LR
+    subgraph people["People"]
+        eng["Data engineer<br/>runs maya"]
+        appr["Approvers<br/>data owner, steward, KPI owner,<br/>business owner, security"]
+        cicd["CI/CD pipeline"]
+    end
+
+    subgraph project["Project repository"]
+        spec["maya.yaml<br/>foundation, roles, goals"]
+        cust["Customer inputs<br/>context, KPIs, taxonomy"]
+        bundle["bundle/<br/>Asset Bundle written by MAYA"]
+    end
+
+    subgraph engine["MAYA engine (laptop or CI runner)"]
+        cli["CLI and spec loader"] --> runner["Goal runner<br/>goal graph,<br/>prerequisite rule"]
+        runner --> harness["Goal harness<br/>runs the goal's<br/>graph.yaml"]
+        harness --> vc["Validator and<br/>certification"]
+        vc --> status["Status and<br/>publish"]
+    end
+
+    omni["Omnigent<br/>agent runtime"]
+
+    subgraph ws["Databricks workspace"]
+        gw["AI Gateway<br/>model service"]
+        job["Job maya_deploy<br/>one task per goal"]
+        found["Unity Catalog foundation<br/>bronze, silver, gold"]
+        deliv["Unity Catalog deliverables<br/>comments, tags, keys, metric views,<br/>ontology, masks, policies, grants"]
+        state["MAYA state schema<br/>status, runs, checks, approvals,<br/>certifications, ledgers"]
+        dash["Dashboards<br/>project and portfolio"]
+    end
+
+    eng --> cli
+    appr -->|"maya review"| cli
+    spec --> cli
+    cust --> cli
+    harness -->|"agent tasks"| omni --> gw
+    harness -->|"read-only SQL"| found
+    harness -->|"writes scripts"| bundle
+    bundle -->|"bundle deploy and run"| job --> deliv
+    vc -->|"checks"| deliv
+    status --> state
+    status -->|"republish"| dash
+    cicd -->|"same bundle to test and prod"| bundle
+```
+
+The full picture, including a goal run end to end, goal statuses, delivery and promotion, and the state model, is in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 - `maya.yaml` declares the project, its foundation and the inputs of each goal. Inputs are validated against each
   goal's `inputs.schema.json` before anything runs.
@@ -103,17 +153,19 @@ maya status            # goals, checks, certifications and the AI Enabled milest
 
 Other commands: `plan`, `review`, `bundle`, `migrate`, `projects`, `portfolio` (see `maya --help`).
 
-## Tutorials
+## Documentation
 
-| Tutorial | For |
+| Document | For |
 |----------|-----|
+| [Architecture](docs/ARCHITECTURE.md) | How MAYA works: components, the two levels of graph, a goal run end to end, statuses, delivery through the Asset Bundle and CI/CD, the state model |
 | [Example: from a synthetic foundation to AI Enabled](docs/TUTORIAL.md) | Learning MAYA: deploys a sample foundation and runs G0 to G4 on it, explaining every goal, check and command |
 | [Your own foundation to AI Enabled](docs/TUTORIAL_YOUR_FOUNDATION.md) | Using MAYA on your data: inventory, `maya.yaml` for your layers, your context, KPIs, taxonomy and access model, then CI/CD |
 
 ## Layout
 
 - `maya/core`: engine (spec, runner, harness, state, certification, bundle)
-- `maya/goals/gNN_*`: one folder per goal with `goal.yaml`, `inputs.schema.json`, `code/`, `harness/` and `validator/`
+- `maya/goals/gNN_*`: one folder per goal with `goal.yaml`, `inputs.schema.json`, `code/`, `harness/` and `validator/`,
+  and a `README.md` with the goal's architecture diagram
 - `maya/bundle`: the script runner deployed with the Asset Bundle
 - `maya/status`: status report and dashboards
 - `examples/`: `commercial_analytics` (G0 to G4) and `supply_chain`

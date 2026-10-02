@@ -90,6 +90,8 @@ Enabled. Section 18 describes the AI Ready goals.
 
 ## 1. Concepts in five minutes
 
+The diagrams in [ARCHITECTURE.md](ARCHITECTURE.md) show how these concepts fit together.
+
 **Project.** One `maya.yaml` describes one data product: the workspace connection, the foundation (which catalogs,
 schemas and tables are in scope), the inputs of each goal and who certifies them. Nothing outside what `maya.yaml`
 declares is ever scanned or changed.
@@ -356,7 +358,8 @@ maya run                # without --goal: runs the next goal that is ready or st
 
 ## 8. G0 Foundation intake
 
-*Milestone 1 · AI Enabled, step 1 of 5.*
+*Milestone 1 · AI Enabled, step 1 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g00_foundation](../maya/goals/g00_foundation/README.md).
 
 **What it does.** Reads the foundation declared under `foundation:` and nothing else. It inventories every table and
 view, checks that each can be queried, is not empty and (where you set a limit) is fresh, and asks the
@@ -417,7 +420,8 @@ job, or relax `freshness_hours`). Fix and run `maya run --goal G0` again.
 
 ## 9. G1 Metadata
 
-*Milestone 1 · AI Enabled, step 2 of 5.*
+*Milestone 1 · AI Enabled, step 2 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g01_metadata](../maya/goals/g01_metadata/README.md).
 
 **What it does.**
 
@@ -509,7 +513,8 @@ WHERE schema_name = 'maya_silver' AND table_name = 'customer';
 
 ## 10. G2 Metric views
 
-*Milestone 1 · AI Enabled, step 3 of 5.*
+*Milestone 1 · AI Enabled, step 3 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g02_metric_views](../maya/goals/g02_metric_views/README.md).
 
 **What it does.** You write the complete definition of each KPI as a metric view in YAML, including, for every
 measure, an independent reference SQL. MAYA renders and creates the views through the bundle, keeps existing tags
@@ -598,7 +603,8 @@ differ. Fix the definition or the reference SQL and run G2 again.
 
 ## 11. G3 Semantic model
 
-*Milestone 1 · AI Enabled, step 4 of 5.*
+*Milestone 1 · AI Enabled, step 4 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g03_semantic_model](../maya/goals/g03_semantic_model/README.md).
 
 **What it does.** Builds the business taxonomy **domain > subdomain > page** over the data product and places every
 Silver, Gold and metric-view asset on exactly one page. You declare domains and subdomains completely; for pages you
@@ -707,7 +713,8 @@ SELECT * FROM solution_builder.maya_semantic.ontology_nodes ORDER BY node_type, 
 
 ## 12. G4 Governance and access
 
-*Milestone 1 · AI Enabled, step 5 of 5.*
+*Milestone 1 · AI Enabled, step 5 of 5.* Architecture of this goal (inputs, harness graph, outputs, checks):
+[maya/goals/g04_governance](../maya/goals/g04_governance/README.md).
 
 **What it does.** Everything about access is declared in YAML and delivered through the bundle:
 
